@@ -2,6 +2,16 @@ export const LOGO_URL = 'https://customer-assets.emergentagent.com/job_137b2a28-
 export const BRAND_NAME = 'Axovion.io';
 export const BRAND_TAGLINE = 'Automate to Win';
 
+export const SOCIAL_LINKS = {
+  instagram: 'https://www.instagram.com/axovion.io?igsh=MW9ieGpvbnQ0enoybw==',
+  facebook: 'https://www.facebook.com/share/18tybvyFQ9/',
+  facebookPage: 'https://www.facebook.com/share/1LpN7Ao1fe/',
+  youtube: 'https://www.youtube.com/@Axovion_io',
+  twitter: 'https://x.com/Axovionio',
+  linkedin: 'https://www.linkedin.com/in/axovion-io-610489409',
+  reddit: 'https://www.reddit.com/user/Aggressive-Raise-635/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button',
+};
+
 export const SERVICES = [
   {
     slug: 'ai-audit',

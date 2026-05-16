@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Linkedin, Twitter, Instagram, Youtube, Facebook } from 'lucide-react';
-import { LOGO_URL } from '../lib/content';
+import { SOCIAL_LINKS, LOGO_URL } from '../lib/content';
 
 export const Footer = () => {
   return (
@@ -45,11 +45,11 @@ export const Footer = () => {
           <div>
             <div className="font-mono text-[11px] tracking-[0.18em] uppercase text-[#C0C0C8]/55 mb-4">Social</div>
             <div className="flex flex-wrap gap-3">
-              <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="h-10 w-10 rounded-[12px] bg-[#12121A] border border-white/10 inline-flex items-center justify-center text-[#C0C0C8]/80 hover:text-white hover:border-[#00D4FF]/35 transition-colors duration-200" aria-label="LinkedIn" data-testid="footer-social-linkedin"><Linkedin className="h-4 w-4" /></a>
-              <a href="https://twitter.com" target="_blank" rel="noreferrer" className="h-10 w-10 rounded-[12px] bg-[#12121A] border border-white/10 inline-flex items-center justify-center text-[#C0C0C8]/80 hover:text-white hover:border-[#00D4FF]/35 transition-colors duration-200" aria-label="X / Twitter" data-testid="footer-social-twitter"><Twitter className="h-4 w-4" /></a>
-              <a href="https://instagram.com" target="_blank" rel="noreferrer" className="h-10 w-10 rounded-[12px] bg-[#12121A] border border-white/10 inline-flex items-center justify-center text-[#C0C0C8]/80 hover:text-white hover:border-[#00D4FF]/35 transition-colors duration-200" aria-label="Instagram" data-testid="footer-social-instagram"><Instagram className="h-4 w-4" /></a>
-              <a href="https://youtube.com" target="_blank" rel="noreferrer" className="h-10 w-10 rounded-[12px] bg-[#12121A] border border-white/10 inline-flex items-center justify-center text-[#C0C0C8]/80 hover:text-white hover:border-[#00D4FF]/35 transition-colors duration-200" aria-label="YouTube" data-testid="footer-social-youtube"><Youtube className="h-4 w-4" /></a>
-              <a href="https://facebook.com" target="_blank" rel="noreferrer" className="h-10 w-10 rounded-[12px] bg-[#12121A] border border-white/10 inline-flex items-center justify-center text-[#C0C0C8]/80 hover:text-white hover:border-[#00D4FF]/35 transition-colors duration-200" aria-label="Facebook" data-testid="footer-social-facebook"><Facebook className="h-4 w-4" /></a>
+              <a href={SOCIAL_LINKS.linkedin} target="_blank" rel="noreferrer" className="h-10 w-10 rounded-[12px] bg-[#12121A] border border-white/10 inline-flex items-center justify-center text-[#C0C0C8]/80 hover:text-white hover:border-[#00D4FF]/35 transition-colors duration-200" aria-label="LinkedIn" data-testid="footer-social-linkedin"><Linkedin className="h-4 w-4" /></a>
+              <a href={SOCIAL_LINKS.twitter} target="_blank" rel="noreferrer" className="h-10 w-10 rounded-[12px] bg-[#12121A] border border-white/10 inline-flex items-center justify-center text-[#C0C0C8]/80 hover:text-white hover:border-[#00D4FF]/35 transition-colors duration-200" aria-label="X / Twitter" data-testid="footer-social-twitter"><Twitter className="h-4 w-4" /></a>
+              <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer" className="h-10 w-10 rounded-[12px] bg-[#12121A] border border-white/10 inline-flex items-center justify-center text-[#C0C0C8]/80 hover:text-white hover:border-[#00D4FF]/35 transition-colors duration-200" aria-label="Instagram" data-testid="footer-social-instagram"><Instagram className="h-4 w-4" /></a>
+              <a href={SOCIAL_LINKS.youtube} target="_blank" rel="noreferrer" className="h-10 w-10 rounded-[12px] bg-[#12121A] border border-white/10 inline-flex items-center justify-center text-[#C0C0C8]/80 hover:text-white hover:border-[#00D4FF]/35 transition-colors duration-200" aria-label="YouTube" data-testid="footer-social-youtube"><Youtube className="h-4 w-4" /></a>
+              <a href={SOCIAL_LINKS.facebook} target="_blank" rel="noreferrer" className="h-10 w-10 rounded-[12px] bg-[#12121A] border border-white/10 inline-flex items-center justify-center text-[#C0C0C8]/80 hover:text-white hover:border-[#00D4FF]/35 transition-colors duration-200" aria-label="Facebook" data-testid="footer-social-facebook"><Facebook className="h-4 w-4" /></a>
             </div>
           </div>
         </div>
