@@ -3,9 +3,9 @@ import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { useScrollReveal } from '../lib/hooks';
 import {
-  Users, Clock, ShoppingCart, TrendingUp, MessageCircle,
-  ArrowRight, Sparkles
+  ArrowRight, Sparkles, MessageCircle, X, Send
 } from 'lucide-react';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const Reveal = ({ children, delay = 0 }) => {
   const ref = useScrollReveal();
@@ -15,6 +15,43 @@ const Reveal = ({ children, delay = 0 }) => {
     </div>
   );
 };
+
+const COLORS = ['#EF4444', '#F97316', '#10B981'];
+
+// Direct Groq API Configuration - No backend needed for demo
+// Add REACT_APP_GROQ_API_KEY to your .env file
+const GROQ_API_KEY = process.env.REACT_APP_GROQ_API_KEY;
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
+const SYS_PROMPT = `You are Aisha, AI Customer Support for BATIK (batik.com.pk), a premium Pakistani fashion brand based in Islamabad (Centaurus Mall). Tone: warm, helpful, professional. Use "ji" occasionally for respect. Never hallucinate prices or stock.
+
+CURRENT CATALOG SUMMARY:
+[Winter Pret 2025]
+- 2Pc Khaddar: PKR 5,100-5,600 (casual daily wear)
+- 2Pc Velvet: PKR 9,800 (luxe pret)
+- 3Pc Cotton: PKR 10,500 (embroidered festive)
+- 3Pc Karandi: PKR 12,600 (festive wear)
+- 3Pc Khaddar: PKR 7,700-11,900 (embroidered solids)
+- 3Pc Velvet: PKR 11,200-20,300 (formals/luxe)
+
+[Pret 2025 - Lawn & Summer]
+- 2Pc Lawn: PKR 4,200-4,500 (printed casual)
+- 2Pc Pima Lawn: PKR 4,900-9,000 (embroidered casual)
+- 3Pc Egyptian Cotton: PKR 10,500-13,300 (festive luxe)
+- 3Pc Lawn: PKR 6,300-10,500 (printed/embroidered)
+
+[Studio Formals]
+- 3Pc Net/Organza: PKR 29,000 (wedding formal)
+- 3Pc Velvet: PKR 17,500-23,100 (luxury festive)
+
+Sizes: XS, S, M, L, XL. Most items on 30% sale. Sale items: NO exchange/refund.
+
+SHIPPING: Free shipping nationwide via Postex. COD available. 7-10 working days.
+EXCHANGE: Within 7 days ONLY for damaged/defective. Email photo to care@batik.com.pk within 3 days.
+CONTACT: Helpline: 051-111-222-845 | WhatsApp: 0314-5600009
+
+Keep answers concise. Use bullet points for comparisons.`;
 
 const Demo = () => {
   // Calculator state
@@ -31,14 +68,32 @@ const Demo = () => {
   const [liveLoss, setLiveLoss] = useState(0);
   const [results, setResults] = useState({});
   
-  // Chatbot state
+  // Chatbot state - Direct Groq API
   const [chatOpen, setChatOpen] = useState(true);
   const [messages, setMessages] = useState([
-    { role: 'bot', content: "As-salamu alaykum! I'm Aisha, your AI assistant. I can help with:\n\n• Collections & new arrivals\n• Order tracking & delivery\n• Size & style recommendations\n• Exchange & return questions\n• Payment & shipping info\n\nWhat can I help you with?" }
+    { role: 'assistant', content: "As-salamu alaykum! I'm Aisha, your AI assistant. I can help with:\n\n• Collections & new arrivals\n• Order tracking & delivery\n• Size & style recommendations\n• Exchange & return questions\n• Payment & shipping info\n\nWhat can I help you with?" }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+  const [chatHistory, setChatHistory] = useState([
+    { role: "system", content: SYS_PROMPT }
+  ]);
   const chatEndRef = useRef(null);
+
+  // Charts data
+  const [chartData, setChartData] = useState({
+    donut: [
+      { name: 'CS Payroll', value: 2160000 },
+      { name: 'Cart Abandonment Loss', value: 157680000 },
+      { name: 'Recoverable Revenue', value: 23328000 }
+    ],
+    bar: [
+      { name: 'Month 1', savings: 1944000, cost: 83500 },
+      { name: 'Month 3', savings: 5832000, cost: 250500 },
+      { name: 'Month 6', savings: 11664000, cost: 501000 },
+      { name: 'Month 12', savings: 23328000, cost: 1002000 }
+    ]
+  });
 
   // Calculations
   useEffect(() => {
@@ -59,7 +114,22 @@ const Demo = () => {
       recoverableAnnual,
       usdEquivalent
     });
-  }, [csCount, csSalary, responseTime, dailyInquiries, afterHoursPct, aov, abandonRate, dailyVisitors, recoverablePct, aiResolvePct]);
+
+    // Update charts
+    setChartData({
+      donut: [
+        { name: 'CS Payroll', value: csAnnual },
+        { name: 'Cart Abandonment Loss', value: abandonedValue * 365 },
+        { name: 'Recoverable Revenue', value: recoverableAnnual }
+      ],
+      bar: [
+        { name: 'Month 1', savings: recoverableAnnual / 12, cost: 83500 },
+        { name: 'Month 3', savings: (recoverableAnnual / 12) * 3, cost: 250500 },
+        { name: 'Month 6', savings: (recoverableAnnual / 12) * 6, cost: 501000 },
+        { name: 'Month 12', savings: recoverableAnnual, cost: 1002000 }
+      ]
+    });
+  }, [csCount, csSalary, dailyInquiries, afterHoursPct, aov, abandonRate, dailyVisitors, recoverablePct, aiResolvePct]);
 
   // Live ticker
   useEffect(() => {
@@ -90,31 +160,85 @@ const Demo = () => {
     if (n >= 1e3) return 'PKR ' + (n / 1e3).toFixed(0) + 'K';
     return 'PKR ' + n;
   };
+  const formatChartValue = (value) => {
+    if (value >= 1e6) return (value / 1e6).toFixed(1) + 'M';
+    if (value >= 1e3) return (value / 1e3).toFixed(0) + 'K';
+    return value;
+  };
 
-  // Chatbot functions
+  // Direct AI Chatbot - calls Groq API directly
   const sendChatMessage = useCallback(async () => {
     if (!chatInput.trim() || chatLoading) return;
     
     const userMsg = chatInput.trim();
     setChatInput('');
-    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setChatLoading(true);
+    
+    // Add user message
+    const newHistory = [...chatHistory, { role: 'user', content: userMsg }];
+    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+    setChatHistory(newHistory);
 
-    // Simulate AI response (you can replace this with actual API call)
-    setTimeout(() => {
+    try {
+      // Call Groq API directly
+      const res = await fetch(GROQ_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + GROQ_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: GROQ_MODEL,
+          messages: newHistory,
+          temperature: 0.7,
+          max_tokens: 500
+        })
+      });
+      
+      if (!res.ok) throw new Error(res.status);
+      
+      const data = await res.json();
+      const reply = data.choices[0].message.content;
+      
+      // Add AI response
       setMessages(prev => [...prev, { 
-        role: 'bot', 
-        content: 'I apologize, but this is a demo environment. In production, this would connect to your AI backend. For now, please contact us directly at hello@axovion.io or try our main chatbot on the homepage.' 
+        role: 'assistant', 
+        content: reply 
       }]);
+      setChatHistory(prev => [...prev, { role: 'assistant', content: reply }]);
+    } catch (error) {
+      console.error('Chat error:', error);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: "I'm having trouble connecting right now. Please check your API key or try again later." 
+      }]);
+    } finally {
       setChatLoading(false);
-    }, 1500);
-  }, [chatInput, chatLoading]);
+    }
+  }, [chatInput, chatLoading, chatHistory]);
 
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
+
+  // Custom tooltip for charts
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-[#1A1A25] border border-[rgba(0,212,255,0.3)] p-3 rounded-lg">
+          <p className="text-white font-semibold">{label}</p>
+          {payload.map((entry, index) => (
+            <p key={index} className="text-sm" style={{ color: entry.color }}>
+              {entry.name}: {formatPKR(entry.value)}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <>
@@ -428,6 +552,81 @@ const Demo = () => {
         </div>
       </section>
 
+      {/* Charts Section */}
+      <section className="ax-section" id="charts">
+        <div className="ax-container">
+          <Reveal>
+            <div className="font-mono text-xs tracking-[2px] uppercase text-[#00D4FF] mb-4">Visual Insights</div>
+            <h2 className="text-white text-4xl md:text-5xl font-extrabold mb-4">Data Visualization</h2>
+            <p className="text-[#C0C0C8] text-lg max-w-[600px] mb-16">Interactive breakdown of your support costs and recovery potential.</p>
+          </Reveal>
+          <div className="grid md:grid-cols-2 gap-6">
+            <Reveal>
+              <div className="bg-[#12121A] border border-[rgba(0,212,255,0.15)] rounded-2xl p-8">
+                <h3 className="text-white font-semibold mb-6 flex items-center gap-2">
+                  <span className="text-xl">📊</span> Cost Breakdown
+                </h3>
+                <div className="h-[280px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={chartData.donut}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {chartData.donut.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36}
+                        formatter={(value) => <span className="text-[#C0C0C8]">{value}</span>}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </Reveal>
+            <Reveal>
+              <div className="bg-[#12121A] border border-[rgba(0,212,255,0.15)] rounded-2xl p-8">
+                <h3 className="text-white font-semibold mb-6 flex items-center gap-2">
+                  <span className="text-xl">📈</span> ROI Timeline
+                </h3>
+                <div className="h-[280px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData.bar}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fill: '#C0C0C8', fontFamily: 'Inter' }}
+                        axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                      />
+                      <YAxis 
+                        tick={{ fill: '#C0C0C8', fontFamily: 'JetBrains Mono', fontSize: 10 }}
+                        axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                        tickFormatter={formatChartValue}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend 
+                        formatter={(value) => <span className="text-[#C0C0C8]">{value}</span>}
+                      />
+                      <Bar dataKey="savings" name="Cumulative Savings (PKR)" fill="rgba(0,212,255,0.7)" radius={[8, 8, 0, 0]} />
+                      <Bar dataKey="cost" name="AI Cost (PKR)" fill="rgba(249,115,22,0.7)" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
       {/* Comparison Table */}
       <section className="ax-section" id="comparison">
         <div className="ax-container">
@@ -448,14 +647,14 @@ const Demo = () => {
                 </thead>
                 <tbody>
                   {[
-                    ['Response Time', '4-8 hours (business hours only)', 'Under 2 seconds, 24/7/365', true],
-                    ['Support Hours', 'Mon-Fri, 9 AM - 6 PM', '24/7 including holidays & weekends', true],
-                    ['Languages', 'English + Urdu (if rep knows)', 'English, Urdu, Roman Urdu auto', true],
-                    ['Concurrent Chats', '1-2 per rep', 'Unlimited — every customer at once', true],
-                    ['Order Tracking', 'Manual email/call', 'Instant automated status', true],
-                    ['Product Help', 'Wait for human', 'Instant recommendations from catalog', true],
-                    ['Cart Recovery', 'No follow-up = lost sale', 'Auto follow-up within 30 min', true],
-                    ['Monthly Cost', 'PKR 180,000+ (4 reps)', 'PKR 83,500 (AI + 1 supervisor)', true],
+                    ['Response Time', '4-8 hours (business hours only)', 'Under 2 seconds, 24/7/365'],
+                    ['Support Hours', 'Mon-Fri, 9 AM - 6 PM', '24/7 including holidays & weekends'],
+                    ['Languages', 'English + Urdu (if rep knows)', 'English, Urdu, Roman Urdu auto'],
+                    ['Concurrent Chats', '1-2 per rep', 'Unlimited — every customer at once'],
+                    ['Order Tracking', 'Manual email/call', 'Instant automated status'],
+                    ['Product Help', 'Wait for human', 'Instant recommendations from catalog'],
+                    ['Cart Recovery', 'No follow-up = lost sale', 'Auto follow-up within 30 min'],
+                    ['Monthly Cost', 'PKR 180,000+ (4 reps)', 'PKR 83,500 (AI + 1 supervisor)'],
                   ].map(([metric, current, ai], i) => (
                     <tr key={i} className="hover:bg-[rgba(0,212,255,0.03)] transition-colors">
                       <td className="p-5 border-b border-[rgba(255,255,255,0.04)]">{metric}</td>
@@ -506,19 +705,21 @@ const Demo = () => {
         </div>
       </section>
 
-      {/* Chatbot */}
+      {/* AI Chatbot - Connected to Real Backend API */}
       <div className={`fixed bottom-6 right-6 w-[380px] max-h-[550px] bg-[#12121A] border border-[rgba(0,212,255,0.15)] rounded-[20px] flex flex-col overflow-hidden z-[1000] transition-all shadow-[0_8px_40px_rgba(0,0,0,0.4)] ${!chatOpen ? 'h-[60px] max-h-[60px]' : ''}`}>
         <div 
           className="bg-gradient-to-br from-[rgba(0,212,255,0.15)] to-[rgba(59,130,246,0.1)] px-5 py-3.5 flex items-center gap-3 cursor-pointer border-b border-[rgba(0,212,255,0.15)]"
           onClick={() => setChatOpen(!chatOpen)}
         >
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#3B82F6] flex items-center justify-center text-white font-bold">AI</div>
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#3B82F6] flex items-center justify-center text-white font-bold">
+            <MessageCircle className="h-5 w-5" />
+          </div>
           <div>
-            <h4 className="text-white font-semibold text-sm">Aisha</h4>
-            <span className="text-[#10B981] text-xs">● Online</span>
+            <h4 className="text-white font-semibold text-sm">Aisha - AI Demo</h4>
+            <span className="text-[#10B981] text-xs">● Online - Real AI</span>
           </div>
           <button className="ml-auto bg-none border-none text-[#C0C0C8] text-xl cursor-pointer">
-            {chatOpen ? '−' : '+'}
+            {chatOpen ? <X className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
           </button>
         </div>
         {chatOpen && (
@@ -538,9 +739,9 @@ const Demo = () => {
               ))}
               {chatLoading && (
                 <div className="bg-[#1A1A25] self-start rounded-bl-md rounded-2xl p-4 flex gap-1.5">
-                  <div className="w-[7px] h-[7px] bg-[#C0C0C8] rounded-full animate-bounce" />
-                  <div className="w-[7px] h-[7px] bg-[#C0C0C8] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                  <div className="w-[7px] h-[7px] bg-[#C0C0C8] rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                  <div className="w-[7px] h-[7px] bg-[#00D4FF] rounded-full animate-bounce" />
+                  <div className="w-[7px] h-[7px] bg-[#00D4FF] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                  <div className="w-[7px] h-[7px] bg-[#00D4FF] rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
                 </div>
               )}
               <div ref={chatEndRef} />
@@ -556,9 +757,10 @@ const Demo = () => {
               />
               <button 
                 onClick={sendChatMessage}
-                className="bg-[#F97316] text-white border-none px-5 py-2.5 rounded-xl font-semibold cursor-pointer hover:bg-[#FBBF24] transition-all"
+                disabled={chatLoading}
+                className="bg-[#F97316] text-white border-none px-5 py-2.5 rounded-xl font-semibold cursor-pointer hover:bg-[#FBBF24] transition-all disabled:opacity-50"
               >
-                Send
+                <Send className="h-4 w-4" />
               </button>
             </div>
           </>
