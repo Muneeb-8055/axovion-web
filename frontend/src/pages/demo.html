@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Support ROI Analysis | Axovion.io</title>
+<meta name="description" content="Calculate the hidden cost of delayed customer support and see how AI can recover lost revenue.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0A0A0F;--surface:#12121A;--elevated:#1A1A25;--text:#C0C0C8;--heading:#FFF;--cyan:#00D4FF;--blue:#3B82F6;--orange:#F97316;--amber:#FBBF24;--success:#10B981;--error:#EF4444;--glass:rgba(18,18,26,.7);--glass-border:rgba(0,212,255,.15)}
+*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+canvas#particles{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.scroll-bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--cyan),var(--blue));z-index:9999;transition:width .1s;box-shadow:0 0 10px var(--cyan)}
+/* NAV */
+.nav{position:fixed;top:0;width:100%;z-index:1000;padding:16px 0;transition:all .3s}
+.nav.scrolled{background:rgba(10,10,15,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--glass-border);padding:10px 0}
+.nav-inner{display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-family:'JetBrains Mono',monospace;font-size:1.2rem;font-weight:700;color:var(--heading);text-decoration:none;letter-spacing:1px}
+.nav-logo span{color:var(--cyan)}
+.nav-links{display:flex;gap:32px;list-style:none}
+.nav-links a{color:var(--text);text-decoration:none;font-size:.85rem;font-weight:500;letter-spacing:.5px;text-transform:uppercase;transition:color .3s;position:relative}
+.nav-links a:hover,.nav-links a.active{color:var(--cyan)}
+.nav-links a.active::after{content:'';position:absolute;bottom:-4px;left:0;width:100%;height:2px;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.nav-toggle{display:none;background:none;border:none;color:var(--heading);font-size:1.5rem;cursor:pointer}
+/* HERO */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;position:relative;z-index:1;padding:120px 24px 80px}
+.hero-content{max-width:800px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);padding:8px 20px;border-radius:30px;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--cyan);margin-bottom:32px;letter-spacing:2px;text-transform:uppercase}
+.hero-badge .dot{width:6px;height:6px;background:var(--success);border-radius:50%;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hero h1{font-size:4.5rem;font-weight:800;color:var(--heading);line-height:1.1;margin-bottom:24px}
+.hero h1 .glow{background:linear-gradient(135deg,var(--cyan),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;position:relative}
+.hero p{font-size:1.25rem;color:var(--text);max-width:600px;margin:0 auto 40px;line-height:1.8}
+.hero-cta{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.btn{padding:14px 32px;border-radius:12px;font-weight:600;font-size:.95rem;cursor:pointer;transition:all .3s;text-decoration:none;display:inline-flex;align-items:center;gap:8px;border:none;font-family:'Inter',sans-serif}
+.btn-primary{background:var(--orange);color:#fff;box-shadow:0 0 20px rgba(249,115,22,.3)}
+.btn-primary:hover{background:var(--amber);transform:translateY(-2px);box-shadow:0 0 30px rgba(249,115,22,.5)}
+.btn-ghost{background:transparent;color:var(--cyan);border:1px solid rgba(0,212,255,.4)}
+.btn-ghost:hover{background:rgba(0,212,255,.1);border-color:var(--cyan)}
+.hero-stats{display:flex;gap:48px;justify-content:center;margin-top:60px;flex-wrap:wrap}
+.hero-stat{text-align:center}
+.hero-stat .num{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;color:var(--heading)}
+.hero-stat .num span{color:var(--cyan)}
+.hero-stat .lbl{font-size:.8rem;color:var(--text);margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+/* TICKER */
+.ticker{position:sticky;top:0;z-index:999;background:linear-gradient(90deg,rgba(239,68,68,.9),rgba(249,115,22,.9));padding:14px 0;text-align:center;font-weight:600;color:#fff;backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.1)}
+.ticker .amount{font-family:'JetBrains Mono',monospace;font-size:1.4rem;font-weight:700;margin-left:8px}
+/* SECTIONS */
+.section{padding:100px 0;position:relative;z-index:1}
+.section-tag{display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--cyan);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px}
+.section-tag::before{content:'';width:24px;height:1px;background:var(--cyan)}
+.section-title{font-size:2.8rem;font-weight:800;color:var(--heading);margin-bottom:16px}
+.section-sub{color:var(--text);font-size:1.1rem;max-width:600px;margin-bottom:60px}
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-bottom:80px}
+.metric-card{background:var(--surface);border:1px solid var(--glass-border);border-radius:16px;padding:32px;text-align:center;transition:all .3s;position:relative;overflow:hidden}
+.metric-card::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:60%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
+.metric-card:hover{border-color:rgba(0,212,255,.4);transform:translateY(-4px);box-shadow:0 8px 32px rgba(0,212,255,.1)}
+.metric-card .mc-icon{font-size:1.5rem;margin-bottom:12px}
+.metric-card .mc-val{font-family:'JetBrains Mono',monospace;font-size:2.2rem;font-weight:700;color:var(--heading);margin-bottom:4px}
+.metric-card .mc-val.loss{color:var(--error)}
+.metric-card .mc-val.gain{color:var(--success)}
+.metric-card .mc-lbl{font-size:.8rem;color:var(--text);text-transform:uppercase;letter-spacing:1px}
+/* CALC CARDS */
+.calc-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+.calc-card{background:var(--surface);border:1px solid var(--glass-border);border-radius:16px;padding:32px;transition:all .3s}
+.calc-card:hover{border-color:rgba(0,212,255,.3);box-shadow:0 4px 24px rgba(0,212,255,.06)}
+.calc-card h3{font-size:1rem;font-weight:600;color:var(--heading);display:flex;align-items:center;gap:10px;margin-bottom:24px}
+.calc-card .icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.input-group{margin-bottom:20px}
+.input-group label{display:block;font-size:.8rem;font-weight:500;margin-bottom:8px;color:var(--text)}
+.input-group input{width:100%;padding:12px 16px;background:var(--elevated);border:1px solid rgba(255,255,255,.08);border-radius:10px;font-size:1rem;color:var(--heading);font-family:'JetBrains Mono',monospace;transition:border-color .3s}
+.input-group input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 12px rgba(0,212,255,.15)}
+.est-tag{display:inline-block;background:rgba(249,115,22,.15);color:var(--orange);padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:600;margin-left:6px;font-family:'JetBrains Mono',monospace;letter-spacing:.5px}
+.result-box{background:var(--elevated);border-radius:12px;padding:20px;margin-top:12px;border-left:3px solid var(--error);position:relative}
+.result-box.positive{border-left-color:var(--success)}
+.result-box .r-label{font-size:.8rem;color:var(--text);margin-bottom:4px}
+.result-box .r-value{font-family:'JetBrains Mono',monospace;font-size:1.6rem;font-weight:700;color:var(--error)}
+.result-box.positive .r-value{color:var(--success)}
+/* TOTAL */
+.total-box{background:linear-gradient(135deg,var(--surface),var(--elevated));border:1px solid var(--glass-border);border-radius:20px;padding:60px;text-align:center;margin:60px 0;position:relative;overflow:hidden}
+.total-box::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at center,rgba(0,212,255,.05),transparent 70%)}
+.total-box h2{font-size:1.8rem;font-weight:700;color:var(--heading);margin-bottom:16px;position:relative}
+.total-amount{font-family:'JetBrains Mono',monospace;font-size:3.5rem;font-weight:700;background:linear-gradient(135deg,var(--orange),var(--amber));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:16px 0;position:relative}
+.total-sub{font-size:1rem;color:var(--text);position:relative}
+.total-sub strong{color:var(--heading)}
+/* CHARTS */
+.charts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+.chart-card{background:var(--surface);border:1px solid var(--glass-border);border-radius:16px;padding:32px}
+.chart-card h3{font-size:1rem;font-weight:600;color:var(--heading);margin-bottom:24px;display:flex;align-items:center;gap:8px}
+.chart-wrap{position:relative;height:280px}
+/* COMPARISON TABLE */
+.comp-table{width:100%;border-collapse:separate;border-spacing:0;background:var(--surface);border:1px solid var(--glass-border);border-radius:16px;overflow:hidden}
+.comp-table th{background:var(--elevated);color:var(--heading);padding:20px;text-align:left;font-weight:600;font-size:.85rem;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--glass-border)}
+.comp-table td{padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.04);font-size:.95rem}
+.comp-table tr:last-child td{border-bottom:none}
+.comp-table tr:hover td{background:rgba(0,212,255,.03)}
+.comp-table .current{color:var(--error);font-weight:600}
+.comp-table .ai{color:var(--success);font-weight:600}
+/* CTA */
+.cta-box{background:linear-gradient(135deg,var(--surface),rgba(249,115,22,.08));border:1px solid rgba(249,115,22,.2);border-radius:20px;padding:60px;text-align:center;position:relative;overflow:hidden}
+.cta-box::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at top right,rgba(249,115,22,.1),transparent 60%)}
+.cta-box h2{font-size:2.2rem;font-weight:800;color:var(--heading);margin-bottom:16px;position:relative}
+.cta-box p{font-size:1.05rem;color:var(--text);margin-bottom:24px;max-width:500px;margin-left:auto;margin-right:auto;position:relative}
+.demo-tags{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:32px;position:relative}
+.demo-tag{background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);color:var(--cyan);padding:6px 16px;border-radius:20px;font-size:.85rem;font-family:'JetBrains Mono',monospace}
+/* FOOTER */
+.footer{border-top:1px solid var(--glass-border);padding:40px 0;text-align:center;position:relative;z-index:1}
+.footer p{color:var(--text);font-size:.85rem}
+.footer a{color:var(--cyan);text-decoration:none}
+/* CHATBOT */
+.chat-widget{position:fixed;bottom:24px;right:24px;width:380px;max-height:550px;background:var(--surface);border:1px solid var(--glass-border);border-radius:20px;display:flex;flex-direction:column;overflow:hidden;z-index:1000;transition:all .3s;box-shadow:0 8px 40px rgba(0,0,0,.4)}
+.chat-widget.min{height:60px;max-height:60px}
+.chat-head{background:linear-gradient(135deg,rgba(0,212,255,.15),rgba(59,130,246,.1));padding:14px 20px;display:flex;align-items:center;gap:12px;cursor:pointer;border-bottom:1px solid var(--glass-border)}
+.chat-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--blue));display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#fff;font-weight:700}
+.chat-info h4{font-size:.9rem;color:var(--heading);font-weight:600}
+.chat-info span{font-size:.75rem;color:var(--success)}
+.chat-toggle{margin-left:auto;background:none;border:none;color:var(--text);font-size:1.3rem;cursor:pointer}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:350px}
+.chat-msgs::-webkit-scrollbar{width:4px}
+.chat-msgs::-webkit-scrollbar-thumb{background:var(--glass-border);border-radius:2px}
+.msg{max-width:82%;padding:12px 16px;border-radius:14px;font-size:.9rem;line-height:1.5}
+.msg.bot{background:var(--elevated);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px}
+.msg.user{background:linear-gradient(135deg,var(--cyan),var(--blue));color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.msg.typing{background:var(--elevated);align-self:flex-start;border-bottom-left-radius:4px;display:flex;gap:5px;padding:16px}
+.t-dot{width:7px;height:7px;background:var(--text);border-radius:50%;animation:tdot 1.4s infinite}
+.t-dot:nth-child(2){animation-delay:.2s}
+.t-dot:nth-child(3){animation-delay:.4s}
+@keyframes tdot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-8px)}}
+.chat-input{padding:12px 16px;border-top:1px solid var(--glass-border);display:flex;gap:10px}
+.chat-input input{flex:1;padding:10px 14px;background:var(--elevated);border:1px solid rgba(255,255,255,.08);border-radius:10px;color:var(--heading);font-size:.9rem;font-family:'Inter',sans-serif}
+.chat-input input:focus{outline:none;border-color:var(--cyan)}
+.chat-input button{background:var(--orange);color:#fff;border:none;padding:10px 18px;border-radius:10px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.chat-input button:hover{background:var(--amber)}
+/* ANIMATIONS */
+.reveal{opacity:0;transform:translateY(30px);transition:all .6s cubic-bezier(.4,0,.2,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 20px rgba(0,212,255,.2)}50%{box-shadow:0 0 40px rgba(0,212,255,.4)}}
+/* RESPONSIVE */
+@media(max-width:1024px){.metrics{grid-template-columns:repeat(2,1fr)}.calc-grid,.charts-grid{grid-template-columns:1fr}}
+@media(max-width:768px){.hero h1{font-size:2.5rem}.section-title{font-size:2rem}.nav-links{display:none}.nav-toggle{display:block}.total-amount{font-size:2.5rem}.chat-widget{width:100%;right:0;bottom:0;border-radius:20px 20px 0 0}.hero-stats{gap:24px}.total-box{padding:40px 24px}.cta-box{padding:40px 24px}.metrics{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<!-- Particle Canvas -->
+<canvas id="particles"></canvas>
+<!-- Scroll Progress -->
+<div class="scroll-bar" id="scrollBar" style="width:0%"></div>
+
+<!-- Nav -->
+<nav class="nav" id="navbar">
+<div class="container nav-inner">
+<a href="#" class="nav-logo">AXOVION<span>.IO</span></a>
+<ul class="nav-links">
+<li><a href="#hero" class="active">Overview</a></li>
+<li><a href="#calculator">Calculator</a></li>
+<li><a href="#charts">Insights</a></li>
+<li><a href="#comparison">Comparison</a></li>
+<li><a href="#cta">Contact</a></li>
+</ul>
+<button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('show')">☰</button>
+</div>
+</nav>
+
+<!-- Hero -->
+<section class="hero" id="hero">
+<div class="hero-content">
+<div class="hero-badge"><span class="dot"></span> AI-Powered Analysis Engine</div>
+<h1>The Hidden Cost of <span class="glow">Delayed Support</span></h1>
+<p>What happens when your customers need help at 8 PM, on Sunday, or during peak season — and no one answers? This analysis reveals the truth.</p>
+<div class="hero-cta">
+<a href="#calculator" class="btn btn-primary">⚡ Calculate Your Loss</a>
+<a href="#cta" class="btn btn-ghost">◎ See Live Demo</a>
+</div>
+<div class="hero-stats">
+<div class="hero-stat"><div class="num"><span>&lt;2</span>s</div><div class="lbl">AI Response</div></div>
+<div class="hero-stat"><div class="num">24<span>/7</span></div><div class="lbl">Availability</div></div>
+<div class="hero-stat"><div class="num"><span>80</span>%</div><div class="lbl">Auto-Resolved</div></div>
+<div class="hero-stat"><div class="num"><span>∞</span></div><div class="lbl">Concurrent</div></div>
+</div>
+</div>
+</section>
+
+<!-- Live Ticker -->
+<div class="ticker" id="ticker">
+<div class="container">
+💸 Estimated revenue lost while viewing this page: <span class="amount" id="liveLoss">PKR 0</span>
+</div>
+</div>
+
+<!-- Metrics Dashboard -->
+<section class="section" id="metrics-section">
+<div class="container">
+<div class="section-tag">Real-Time Dashboard</div>
+<h2 class="section-title reveal">Key Performance Gaps</h2>
+<p class="section-sub reveal">These numbers update live as you adjust the calculator below.</p>
+<div class="metrics">
+<div class="metric-card reveal"><div class="mc-icon">⏱️</div><div class="mc-val loss" id="m-missed">52</div><div class="mc-lbl">Missed Daily</div></div>
+<div class="metric-card reveal"><div class="mc-icon">💸</div><div class="mc-val loss" id="m-monthly">PKR 1.9M</div><div class="mc-lbl">Monthly Loss</div></div>
+<div class="metric-card reveal"><div class="mc-icon">📉</div><div class="mc-val loss" id="m-annual">PKR 23.3M</div><div class="mc-lbl">Annual Leakage</div></div>
+<div class="metric-card reveal"><div class="mc-icon">🚀</div><div class="mc-val gain" id="m-recover">PKR 23.3M</div><div class="mc-lbl">Recoverable</div></div>
+</div>
+</div>
+</section>
+
+<!-- Calculator -->
+<section class="section" id="calculator">
+<div class="container">
+<div class="section-tag">ROI Calculator</div>
+<h2 class="section-title reveal">Calculate Your Support Costs</h2>
+<p class="section-sub reveal">All numbers are estimates. Click any number to adjust it to your actuals.</p>
+<div class="calc-grid">
+<!-- Card 1 -->
+<div class="calc-card reveal">
+<h3><span class="icon" style="background:rgba(239,68,68,.15)">👥</span> Customer Support Team</h3>
+<div class="input-group"><label>Number of CS reps <span class="est-tag">EST</span></label><input type="number" id="csCount" value="4" onchange="calculateAll()"></div>
+<div class="input-group"><label>Avg monthly salary per rep (PKR) <span class="est-tag">EST</span></label><input type="number" id="csSalary" value="45000" onchange="calculateAll()"></div>
+<div class="result-box"><div class="r-label">Monthly CS payroll</div><div class="r-value" id="csMonthly">PKR 180,000</div></div>
+<div class="result-box"><div class="r-label">Annual CS payroll</div><div class="r-value" id="csAnnual">PKR 2,160,000</div></div>
+</div>
+<!-- Card 2 -->
+<div class="calc-card reveal">
+<h3><span class="icon" style="background:rgba(251,191,36,.15)">⏱️</span> Response Time Impact</h3>
+<div class="input-group"><label>Avg response time (hours) <span class="est-tag">EST</span></label><input type="number" id="responseTime" value="8" onchange="calculateAll()"></div>
+<div class="input-group"><label>Daily inquiries (WhatsApp/IG/Email) <span class="est-tag">EST</span></label><input type="number" id="dailyInquiries" value="80" onchange="calculateAll()"></div>
+<div class="input-group"><label>% inquiries outside 9-6 Mon-Fri <span class="est-tag">EST</span></label><input type="number" id="afterHoursPct" value="65" onchange="calculateAll()"></div>
+<div class="result-box"><div class="r-label">Inquiries missed/delayed daily</div><div class="r-value" id="missedDaily">52</div></div>
+</div>
+<!-- Card 3 -->
+<div class="calc-card reveal">
+<h3><span class="icon" style="background:rgba(59,130,246,.15)">🛒</span> Cart Abandonment</h3>
+<div class="input-group"><label>Average order value (PKR) <span class="est-tag">EST</span></label><input type="number" id="aov" value="15000" onchange="calculateAll()"></div>
+<div class="input-group"><label>Cart abandonment rate % <span class="est-tag">EST</span></label><input type="number" id="abandonRate" value="72" onchange="calculateAll()"></div>
+<div class="input-group"><label>Daily website visitors <span class="est-tag">EST</span></label><input type="number" id="dailyVisitors" value="2000" onchange="calculateAll()"></div>
+<div class="result-box"><div class="r-label">Daily abandoned cart value</div><div class="r-value" id="abandonedValue">PKR 432,000</div></div>
+</div>
+<!-- Card 4 -->
+<div class="calc-card reveal">
+<h3><span class="icon" style="background:rgba(16,185,129,.15)">💰</span> Recovery with AI</h3>
+<div class="input-group"><label>% abandoned carts recoverable with instant response <span class="est-tag">EST</span></label><input type="number" id="recoverablePct" value="15" onchange="calculateAll()"></div>
+<div class="input-group"><label>% after-hours inquiries AI can resolve <span class="est-tag">EST</span></label><input type="number" id="aiResolvePct" value="80" onchange="calculateAll()"></div>
+<div class="result-box positive"><div class="r-label">Monthly recoverable revenue</div><div class="r-value" id="recoverableRevenue">PKR 1,944,000</div></div>
+<div class="result-box positive"><div class="r-label">Annual recoverable revenue</div><div class="r-value" id="recoverableAnnual">PKR 23,328,000</div></div>
+</div>
+</div>
+
+<!-- Total -->
+<div class="total-box reveal">
+<h2>Estimated Annual Revenue Leakage</h2>
+<div class="total-amount" id="totalLeakage">PKR 23,328,000</div>
+<p class="total-sub">That's <strong id="usdEquivalent">~$83,700 USD</strong> every year — from support gaps alone.</p>
+<p class="total-sub" style="margin-top:12px;opacity:.7;font-size:.9rem">This does NOT include: brand reputation damage, negative reviews, repeat purchase loss, or peak season overflow.</p>
+</div>
+</div>
+</section>
+
+<!-- Charts -->
+<section class="section" id="charts">
+<div class="container">
+<div class="section-tag">Visual Insights</div>
+<h2 class="section-title reveal">Data Visualization</h2>
+<p class="section-sub reveal">Interactive breakdown of your support costs and recovery potential.</p>
+<div class="charts-grid">
+<div class="chart-card reveal"><h3>📊 Cost Breakdown</h3><div class="chart-wrap"><canvas id="donutChart"></canvas></div></div>
+<div class="chart-card reveal"><h3>📈 ROI Timeline</h3><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
+</div>
+</div>
+</section>
+
+<!-- Comparison -->
+<section class="section" id="comparison">
+<div class="container">
+<div class="section-tag">Side by Side</div>
+<h2 class="section-title reveal">Current vs. AI-Powered Support</h2>
+<p class="section-sub reveal">What changes when AI joins your team?</p>
+<table class="comp-table reveal">
+<thead><tr><th>Metric</th><th>Current (Human Only)</th><th>With AI Assistant</th></tr></thead>
+<tbody>
+<tr><td>Response Time</td><td class="current">4-8 hours (business hours only)</td><td class="ai">Under 2 seconds, 24/7/365</td></tr>
+<tr><td>Support Hours</td><td class="current">Mon-Fri, 9 AM - 6 PM</td><td class="ai">24/7 including holidays & weekends</td></tr>
+<tr><td>Languages</td><td class="current">English + Urdu (if rep knows)</td><td class="ai">English, Urdu, Roman Urdu auto</td></tr>
+<tr><td>Concurrent Chats</td><td class="current">1-2 per rep</td><td class="ai">Unlimited — every customer at once</td></tr>
+<tr><td>Order Tracking</td><td class="current">Manual email/call</td><td class="ai">Instant automated status</td></tr>
+<tr><td>Product Help</td><td class="current">Wait for human</td><td class="ai">Instant recommendations from catalog</td></tr>
+<tr><td>Cart Recovery</td><td class="current">No follow-up = lost sale</td><td class="ai">Auto follow-up within 30 min</td></tr>
+<tr><td>Monthly Cost</td><td class="current">PKR 180,000+ (4 reps)</td><td class="ai">PKR 83,500 (AI + 1 supervisor)</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- CTA -->
+<section class="section" id="cta">
+<div class="container">
+<div class="cta-box reveal">
+<h2>See It In Action</h2>
+<p>The chatbot in the bottom-right corner is a live demo. Try asking about products, orders, or policies:</p>
+<div class="demo-tags">
+<span class="demo-tag">"What's your latest collection?"</span>
+<span class="demo-tag">"Track my order"</span>
+<span class="demo-tag">"Do you have this in medium?"</span>
+<span class="demo-tag">"What's your return policy?"</span>
+</div>
+<p>Then imagine this answering <strong style="color:var(--heading)">every customer</strong> at <strong style="color:var(--heading)">2 AM on peak night</strong>.</p>
+<div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:32px;position:relative">
+<a href="https://wa.me/923145600009" class="btn btn-primary">📱 WhatsApp Axovion</a>
+<a href="mailto:hammad@axovion.com" class="btn btn-ghost">📧 Email Us</a>
+</div>
+<p style="margin-top:24px;font-size:.85rem;opacity:.7;position:relative">15-minute demo. No commitment. See exactly what this looks like for your brand.</p>
+</div>
+</div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+<div class="container">
+<p style="margin-bottom:8px"><strong style="color:var(--heading)">AXOVION<span style="color:var(--cyan)">.IO</span></strong> — AI Automation for E-Commerce</p>
+<p>This analysis uses publicly available data and industry estimates. All figures are editable above.</p>
+</div>
+</footer>
+
+<!-- Chatbot -->
+<div class="chat-widget" id="chatWidget">
+<div class="chat-head" onclick="toggleChat()">
+<div class="chat-avatar">AI</div>
+<div class="chat-info"><h4>Aisha</h4><span>● Online</span></div>
+<button class="chat-toggle" id="chatToggle">−</button>
+</div>
+<div class="chat-msgs" id="chatMsgs">
+<div class="msg bot">As-salamu alaykum! I'm Aisha, your AI assistant. I can help with:<br><br>• Collections & new arrivals<br>• Order tracking & delivery<br>• Size & style recommendations<br>• Exchange & return questions<br>• Payment & shipping info<br><br>What can I help you with?</div>
+</div>
+<div class="chat-input">
+<input type="text" id="chatInput" placeholder="Ask Aisha anything..." onkeypress="if(event.key==='Enter')sendMsg()">
+<button onclick="sendMsg()">Send</button>
+</div>
+</div>
+<script>
+// ==================== PARTICLE SYSTEM ====================
+const canvas=document.getElementById('particles'),ctx=canvas.getContext('2d');
+let particles=[];
+function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight}
+resizeCanvas();window.addEventListener('resize',resizeCanvas);
+class Particle{
+constructor(){this.reset()}
+reset(){this.x=Math.random()*canvas.width;this.y=Math.random()*canvas.height;this.size=Math.random()*2+.5;this.speedX=(Math.random()-.5)*.3;this.speedY=(Math.random()-.5)*.3;this.opacity=Math.random()*.5+.1;this.color=Math.random()>.7?'0,212,255':'59,130,246'}
+update(){this.x+=this.speedX;this.y+=this.speedY;if(this.x<0||this.x>canvas.width)this.speedX*=-1;if(this.y<0||this.y>canvas.height)this.speedY*=-1}
+draw(){ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fillStyle=`rgba(${this.color},${this.opacity})`;ctx.fill()}
+}
+for(let i=0;i<80;i++)particles.push(new Particle());
+function animateParticles(){ctx.clearRect(0,0,canvas.width,canvas.height);
+particles.forEach(p=>{p.update();p.draw()});
+// Draw connections
+for(let i=0;i<particles.length;i++){for(let j=i+1;j<particles.length;j++){
+const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,dist=Math.sqrt(dx*dx+dy*dy);
+if(dist<120){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.strokeStyle=`rgba(0,212,255,${.08*(1-dist/120)})`;ctx.lineWidth=.5;ctx.stroke()}
+}}
+requestAnimationFrame(animateParticles)}
+animateParticles();
+
+// ==================== SCROLL EFFECTS ====================
+const nav=document.getElementById('navbar');
+window.addEventListener('scroll',()=>{
+// Progress bar
+const h=document.documentElement,b=document.body;
+const pct=(h.scrollTop||b.scrollTop)/((h.scrollHeight||b.scrollHeight)-h.clientHeight)*100;
+document.getElementById('scrollBar').style.width=pct+'%';
+// Navbar background
+nav.classList.toggle('scrolled',window.scrollY>50);
+// Scroll spy
+const sections=document.querySelectorAll('section[id], .hero');
+let current='';
+sections.forEach(s=>{if(window.scrollY>=s.offsetTop-200)current=s.getAttribute('id')});
+document.querySelectorAll('.nav-links a').forEach(a=>{a.classList.toggle('active',a.getAttribute('href')==='#'+current)});
+});
+
+// Reveal on scroll
+const observer=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')})},{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+
+// ==================== CALCULATOR ====================
+function formatPKR(n){return'PKR '+n.toLocaleString('en-PK')}
+function formatShort(n){if(n>=1e6)return'PKR '+(n/1e6).toFixed(1)+'M';if(n>=1e3)return'PKR '+(n/1e3).toFixed(0)+'K';return'PKR '+n}
+function formatUSD(p){return'~$'+Math.round(p/279).toLocaleString('en-US')+' USD'}
+
+function calculateAll(){
+const v=id=>parseInt(document.getElementById(id).value)||0;
+const csCount=v('csCount'),csSalary=v('csSalary'),dailyInquiries=v('dailyInquiries'),afterHoursPct=v('afterHoursPct');
+const aov=v('aov'),abandonRate=v('abandonRate'),dailyVisitors=v('dailyVisitors'),recoverablePct=v('recoverablePct');
+
+const csMonthly=csCount*csSalary,csAnnual=csMonthly*12;
+const missedDaily=Math.round(dailyInquiries*(afterHoursPct/100));
+const abandonedValue=Math.round(dailyVisitors*(abandonRate/100))*aov;
+const recoverableMonthly=Math.round(abandonedValue*(recoverablePct/100)*30);
+const recoverableAnnual=recoverableMonthly*12;
+
+document.getElementById('csMonthly').textContent=formatPKR(csMonthly);
+document.getElementById('csAnnual').textContent=formatPKR(csAnnual);
+document.getElementById('missedDaily').textContent=missedDaily;
+document.getElementById('abandonedValue').textContent=formatPKR(abandonedValue);
+document.getElementById('recoverableRevenue').textContent=formatPKR(recoverableMonthly);
+document.getElementById('recoverableAnnual').textContent=formatPKR(recoverableAnnual);
+document.getElementById('totalLeakage').textContent=formatPKR(recoverableAnnual);
+document.getElementById('usdEquivalent').textContent=formatUSD(recoverableAnnual);
+
+// Update metric cards
+document.getElementById('m-missed').textContent=missedDaily;
+document.getElementById('m-monthly').textContent=formatShort(recoverableMonthly);
+document.getElementById('m-annual').textContent=formatShort(recoverableAnnual);
+document.getElementById('m-recover').textContent=formatShort(recoverableAnnual);
+
+// Update charts
+updateCharts(csAnnual,abandonedValue*365,recoverableAnnual);
+}
+
+// ==================== LIVE TICKER ====================
+let liveLoss=0;
+const lossPerSecond=(2000*.72*15000*.15)/(24*3600);
+setInterval(()=>{liveLoss+=lossPerSecond;document.getElementById('liveLoss').textContent=formatPKR(Math.round(liveLoss))},1000);
+
+// ==================== CHARTS ====================
+let donutChart,barChart;
+function initCharts(){
+const dCtx=document.getElementById('donutChart').getContext('2d');
+donutChart=new Chart(dCtx,{type:'doughnut',data:{labels:['CS Payroll','Cart Abandonment Loss','Recoverable Revenue'],datasets:[{data:[2160000,157680000,23328000],backgroundColor:['#EF4444','#F97316','#10B981'],borderColor:'#12121A',borderWidth:3,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#C0C0C8',padding:16,font:{family:'Inter',size:12}}},tooltip:{backgroundColor:'#1A1A25',titleColor:'#FFF',bodyColor:'#C0C0C8',borderColor:'rgba(0,212,255,.3)',borderWidth:1}},cutout:'65%'}});
+
+const bCtx=document.getElementById('barChart').getContext('2d');
+barChart=new Chart(bCtx,{type:'bar',data:{labels:['Month 1','Month 3','Month 6','Month 12'],datasets:[{label:'Cumulative Savings (PKR)',data:[1944000,5832000,11664000,23328000],backgroundColor:['rgba(0,212,255,.6)','rgba(0,212,255,.7)','rgba(0,212,255,.8)','rgba(0,212,255,.9)'],borderColor:'#00D4FF',borderWidth:1,borderRadius:8},{label:'AI Cost (PKR)',data:[83500,250500,501000,1002000],backgroundColor:['rgba(249,115,22,.6)','rgba(249,115,22,.7)','rgba(249,115,22,.8)','rgba(249,115,22,.9)'],borderColor:'#F97316',borderWidth:1,borderRadius:8}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{ticks:{color:'#C0C0C8',font:{family:'Inter'}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#C0C0C8',font:{family:'JetBrains Mono',size:10},callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3)+'K':v},grid:{color:'rgba(255,255,255,.06)'}}},plugins:{legend:{labels:{color:'#C0C0C8',font:{family:'Inter',size:12}}},tooltip:{backgroundColor:'#1A1A25',titleColor:'#FFF',bodyColor:'#C0C0C8',borderColor:'rgba(0,212,255,.3)',borderWidth:1}}}});
+}
+function updateCharts(cs,abandon,recover){
+if(donutChart){donutChart.data.datasets[0].data=[cs,abandon,recover];donutChart.update()}
+if(barChart){const m=recover/12;barChart.data.datasets[0].data=[m,m*3,m*6,m*12];barChart.update()}
+}
+
+// ==================== CHATBOT ====================
+const GROQ_API_KEY="YOUR_GROQ_API_KEY_HERE";
+const GROQ_MODEL="llama-3.3-70b-versatile";
+const SYS_PROMPT=`You are Aisha, AI Customer Support for BATIK (batik.com.pk), a premium Pakistani fashion brand based in Islamabad (Centaurus Mall). Tone: warm, helpful, professional. Use "ji" occasionally for respect. Never hallucinate prices or stock.
+
+CURRENT CATALOG SUMMARY:
+[Winter Pret 2025]
+- 2Pc Khaddar: PKR 5,100-5,600 (casual daily wear)
+- 2Pc Velvet: PKR 9,800 (luxe pret)
+- 3Pc Cotton: PKR 10,500 (embroidered festive)
+- 3Pc Karandi: PKR 12,600 (festive wear)
+- 3Pc Khaddar: PKR 7,700-11,900 (embroidered solids)
+- 3Pc Velvet: PKR 11,200-20,300 (formals/luxe)
+
+[Pret 2025 - Lawn & Summer]
+- 2Pc Lawn: PKR 4,200-4,500 (printed casual)
+- 2Pc Pima Lawn: PKR 4,900-9,000 (embroidered casual)
+- 3Pc Egyptian Cotton: PKR 10,500-13,300 (festive luxe)
+- 3Pc Lawn: PKR 6,300-10,500 (printed/embroidered)
+
+[Studio Formals]
+- 3Pc Net/Organza: PKR 29,000 (wedding formal)
+- 3Pc Velvet: PKR 17,500-23,100 (luxury festive)
+
+Sizes: XS, S, M, L, XL. Most items on 30% sale. Sale items: NO exchange/refund.
+
+SHIPPING: Free shipping nationwide via Postex. COD available. 7-10 working days.
+EXCHANGE: Within 7 days ONLY for damaged/defective. Email photo to care@batik.com.pk within 3 days.
+CONTACT: Helpline: 051-111-222-845 | WhatsApp: 0314-5600009
+
+Keep answers concise. Use bullet points for comparisons.`;
+
+let chatHistory=[{role:"system",content:SYS_PROMPT}];
+
+function toggleChat(){const w=document.getElementById('chatWidget');w.classList.toggle('min');document.getElementById('chatToggle').textContent=w.classList.contains('min')?'+':'−'}
+
+function addMsg(text,isUser){const d=document.getElementById('chatMsgs'),m=document.createElement('div');m.className='msg '+(isUser?'user':'bot');m.textContent=text;d.appendChild(m);d.scrollTop=d.scrollHeight}
+
+function showTyping(){const d=document.getElementById('chatMsgs'),t=document.createElement('div');t.className='msg typing';t.id='typing';t.innerHTML='<div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div>';d.appendChild(t);d.scrollTop=d.scrollHeight}
+
+async function sendMsg(){
+const input=document.getElementById('chatInput'),msg=input.value.trim();if(!msg)return;
+addMsg(msg,true);input.value='';showTyping();
+chatHistory.push({role:"user",content:msg});
+try{
+const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Authorization':'Bearer '+GROQ_API_KEY,'Content-Type':'application/json'},body:JSON.stringify({model:GROQ_MODEL,messages:chatHistory,temperature:.7,max_tokens:500})});
+if(!r.ok)throw new Error(r.status);
+const d=await r.json(),reply=d.choices[0].message.content;
+const t=document.getElementById('typing');if(t)t.remove();
+addMsg(reply,false);chatHistory.push({role:"assistant",content:reply});
+}catch(e){const t=document.getElementById('typing');if(t)t.remove();addMsg("I'm having trouble connecting. Please try again or contact us at 051-111-222-845.",false);console.error(e)}
+}
+
+// ==================== INIT ====================
+calculateAll();
+initCharts();
+</script>
+</body>
+</html>
