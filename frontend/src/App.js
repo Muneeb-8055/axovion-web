@@ -14,6 +14,7 @@ import About from './pages/About';
 import Team from './pages/Team';
 import Blog from './pages/Blog';
 import Contact from './pages/Contact';
+import Demo from './pages/Demo';
 
 import AdminLogin from './pages/admin/Login';
 import AdminLayout from './pages/admin/AdminLayout';
@@ -45,6 +46,7 @@ function App() {
           <Route path="/team" element={<WithPublic><Team /></WithPublic>} />
           <Route path="/blog" element={<WithPublic><Blog /></WithPublic>} />
           <Route path="/contact" element={<WithPublic><Contact /></WithPublic>} />
+          <Route path="/demo" element={<WithPublic><Demo /></WithPublic>} />
 
           {/* Admin */}
           <Route path="/admin/login" element={<AdminLogin />} />
