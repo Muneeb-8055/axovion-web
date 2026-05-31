@@ -11,8 +11,6 @@ import Audit from './pages/Audit';
 import AuditReport from './pages/AuditReport';
 import Results from './pages/Results';
 import About from './pages/About';
-import Team from './pages/Team';
-import Blog from './pages/Blog';
 import Contact from './pages/Contact';
 import Demo from './pages/Demo';
 
@@ -43,8 +41,6 @@ function App() {
           <Route path="/audit-report/:id" element={<WithPublic><AuditReport /></WithPublic>} />
           <Route path="/results" element={<WithPublic><Results /></WithPublic>} />
           <Route path="/about" element={<WithPublic><About /></WithPublic>} />
-          <Route path="/team" element={<WithPublic><Team /></WithPublic>} />
-          <Route path="/blog" element={<WithPublic><Blog /></WithPublic>} />
           <Route path="/contact" element={<WithPublic><Contact /></WithPublic>} />
           <Route path="/demo" element={<WithPublic><Demo /></WithPublic>} />
 

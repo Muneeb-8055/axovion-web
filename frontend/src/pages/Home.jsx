@@ -268,18 +268,6 @@ const Home = () => {
                 <ChevronRight className="h-4 w-4 text-[#00D4FF] mt-3 opacity-50 group-hover:opacity-100 transition-opacity" />
               </div>
             </BentoCard>
-
-            {/* CRM card */}
-            <BentoCard span="min-h-[180px]" glow dataTestId="services-bento-card-crm" to="/services">
-              <div className="h-full flex flex-col justify-between">
-                <div>
-                  <MailPlus className="h-7 w-7 text-[#00D4FF] mb-3" />
-                  <h3 className="text-white text-lg font-bold">CRM &amp; Email Automation</h3>
-                  <p className="mt-2 text-[#C0C0C8]/70 text-sm">HubSpot/Salesforce sync, lead scoring, segmented flows.</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-[#00D4FF] mt-3 opacity-50 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </BentoCard>
           </div>
           <div className="mt-8 flex justify-center">
             <Link to="/services" data-testid="services-bento-see-all-link" className="inline-flex items-center gap-2 text-sm text-[#C0C0C8] hover:text-white transition-colors duration-200">

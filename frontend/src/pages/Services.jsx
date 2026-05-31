@@ -17,7 +17,7 @@ const Services = () => {
     <>
       <Helmet>
         <title>AI Automation Services | Axovion.io</title>
-        <meta name="description" content="End-to-end AI agent development — customer support chatbots, lead follow-up, booking automation, e-commerce, CRM &amp; email automation, AI consulting." />
+        <meta name="description" content="End-to-end AI agent development — customer support chatbots, lead follow-up, booking automation, e-commerce, and AI consulting." />
       </Helmet>
 
       <section className="relative ax-section bg-[#0A0A0F]" data-testid="services-hero">

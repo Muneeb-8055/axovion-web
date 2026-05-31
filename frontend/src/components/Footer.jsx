@@ -36,8 +36,6 @@ export const Footer = () => {
             <div className="font-mono text-[11px] tracking-[0.18em] uppercase text-[#C0C0C8]/55 mb-4">Company</div>
             <ul className="space-y-3 text-sm">
               <li><Link to="/about" className="text-[#C0C0C8]/80 hover:text-white transition-colors duration-200" data-testid="footer-link-about">About</Link></li>
-              <li><Link to="/team" className="text-[#C0C0C8]/80 hover:text-white transition-colors duration-200" data-testid="footer-link-team">Team</Link></li>
-              <li><Link to="/blog" className="text-[#C0C0C8]/80 hover:text-white transition-colors duration-200" data-testid="footer-link-blog">Blog</Link></li>
               <li><a href="mailto:hello@axovion.io" className="text-[#C0C0C8]/80 hover:text-white transition-colors duration-200">hello@axovion.io</a></li>
             </ul>
           </div>

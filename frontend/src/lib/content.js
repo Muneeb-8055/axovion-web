@@ -98,20 +98,6 @@ export const SERVICES = [
     industries: ['E-commerce'],
   },
   {
-    slug: 'crm-email',
-    icon: 'MailPlus',
-    title: 'CRM & Email Automation',
-    short: 'HubSpot/Salesforce sync, segmented flows, lead scoring, pipeline automation.',
-    full: 'End-to-end CRM & email automation: bidirectional sync, segmented email flows, lead scoring, pipeline triggers.',
-    bullets: [
-      'HubSpot/Salesforce sync',
-      'Segmented email flows',
-      'Lead scoring',
-      'Pipeline automation',
-    ],
-    industries: ['B2B', 'SaaS', 'Agencies'],
-  },
-  {
     slug: 'consulting',
     icon: 'Compass',
     title: 'AI Consulting &amp; Strategy',
