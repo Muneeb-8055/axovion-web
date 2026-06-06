@@ -10,7 +10,8 @@ ROOT_DIR = Path(__file__).parent.parent
 load_dotenv(ROOT_DIR / ".env")
 
 mongo_url = os.environ["MONGO_URL"]
-_client = AsyncIOMotorClient(mongo_url)
+import certifi
+_client = AsyncIOMotorClient(mongo_url, tls=True, tlsCAFile=certifi.where())
 db = _client[os.environ["DB_NAME"]]
 
 
