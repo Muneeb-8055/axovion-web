@@ -1,5 +1,6 @@
 """DB helpers + serialization for MongoDB."""
 import os
+import certifi
 from datetime import datetime, timezone
 from typing import Any, Dict
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -10,10 +11,8 @@ ROOT_DIR = Path(__file__).parent.parent
 load_dotenv(ROOT_DIR / ".env")
 
 mongo_url = os.environ["MONGO_URL"]
-import certifi
 _client = AsyncIOMotorClient(mongo_url, tls=True, tlsCAFile=certifi.where())
 db = _client[os.environ["DB_NAME"]]
-
 
 def serialize_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
     """Recursively convert datetimes to ISO strings for JSON-safe MongoDB storage."""
@@ -31,7 +30,6 @@ def serialize_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
     if isinstance(doc, datetime):
         return doc.isoformat()
     return doc
-
 
 def deserialize_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
     """Convert ISO date strings back to datetime objects where keys look date-like."""
@@ -54,7 +52,6 @@ def deserialize_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
         return [deserialize_doc(x) for x in doc]
     return doc
 
-
 async def init_db():
     """Create indexes + seed defaults."""
     await db.audits.create_index("id", unique=True)
@@ -64,7 +61,6 @@ async def init_db():
     await db.call_logs.create_index("id", unique=True)
     await db.bookings.create_index("id", unique=True)
     await db.users.create_index("email", unique=True)
-
     # Seed default admin user (idempotent)
     from services.auth_service import hash_password
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@axovion.io")
@@ -80,7 +76,6 @@ async def init_db():
             "passwordHash": hash_password(admin_password),
             "createdAt": datetime.now(timezone.utc).isoformat(),
         })
-
     # Seed settings
     existing_settings = await db.settings.find_one({"id": "global"})
     if not existing_settings:
