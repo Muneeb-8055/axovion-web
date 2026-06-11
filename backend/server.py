@@ -20,6 +20,12 @@ from routes.calls import router as calls_router  # noqa: E402
 from routes.auth import router as auth_router  # noqa: E402
 from routes.analytics import router as analytics_router  # noqa: E402
 from routes.misc import router as misc_router  # noqa: E402
+from routes.employees import router as employees_router  # noqa: E402
+from routes.attendance import router as attendance_router  # noqa: E402
+from routes.leaves import router as leaves_router  # noqa: E402
+from routes.overtime import router as overtime_router  # noqa: E402
+from routes.reports import router as reports_router  # noqa: E402
+from routes.notifications import router as notifications_router  # noqa: E402
 
 app = FastAPI(title="Axovion.io API", version="1.0.0")
 
@@ -47,6 +53,12 @@ api_router.include_router(calls_router)
 api_router.include_router(auth_router)
 api_router.include_router(analytics_router)
 api_router.include_router(misc_router)
+api_router.include_router(employees_router)
+api_router.include_router(attendance_router)
+api_router.include_router(leaves_router)
+api_router.include_router(overtime_router)
+api_router.include_router(reports_router)
+api_router.include_router(notifications_router)
 
 # Mount main router
 app.include_router(api_router)

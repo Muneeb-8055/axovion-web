@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Axovion EMS — System Architecture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1117; --panel: #1a1d27; --panel-2: #242836;
+      --border: #2a2e3e; --border-light: #353a4f;
+      --text: #e4e6ef; --text-2: #9198b3; --muted: #5a6082;
+      --primary: #10b981; --primary-dim: #059669;
+      --accent: #f59e0b; --accent-dim: #d97706;
+      --danger: #f43f5e; --info: #3b82f6;
+      --badge-todo: #6366f1; --badge-progress: #f59e0b; --badge-done: #10b981;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { font-size: 15px; }
+    body {
+      margin: 0; font-family: 'Outfit', sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 48px 32px 96px; }
+    * { text-wrap: pretty; }
+
+    /* Hero */
+    .hero {
+      text-align: center; padding: 64px 32px; margin-bottom: 64px;
+      background: linear-gradient(180deg, #141720 0%, var(--bg) 100%);
+      border-bottom: 1px solid var(--border); border-radius: 0 0 32px 32px;
+    }
+    .hero-badge {
+      display: inline-block; padding: 6px 14px; border-radius: 20px;
+      background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.25);
+      color: var(--primary); font-size: 12px; font-weight: 600; letter-spacing: .05em;
+      text-transform: uppercase; margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: 42px; font-weight: 700; margin: 0 0 16px;
+      background: linear-gradient(135deg, #fff 0%, #9198b3 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p { color: var(--text-2); font-size: 17px; max-width: 600px; margin: 0 auto; }
+
+    /* Section */
+    .section { margin-bottom: 64px; }
+    .section-header {
+      display: flex; align-items: center; gap: 14px; margin-bottom: 28px;
+      padding-bottom: 16px; border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      width: 36px; height: 36px; border-radius: 10px; font-size: 13px;
+      font-weight: 700; display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-header h2 { font-size: 22px; font-weight: 600; margin: 0; }
+    .section-header span { color: var(--muted); font-size: 14px; margin-left: auto; }
+
+    /* Cards */
+    .card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 14px; padding: 22px;
+      transition: border-color .2s;
+    }
+    .card:hover { border-color: var(--border-light); }
+    .card-title { font-size: 15px; font-weight: 600; margin: 0 0 10px; color: #fff; }
+    .card-text { font-size: 14px; color: var(--text-2); margin: 0; line-height: 1.6; }
+
+    /* Grid */
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+    /* Role Cards */
+    .role-card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .role-card::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    }
+    .role-card.super::before { background: linear-gradient(90deg, var(--primary), var(--info)); }
+    .role-card.admin::before { background: linear-gradient(90deg, var(--accent), var(--danger)); }
+    .role-card.employee::before { background: linear-gradient(90deg, var(--badge-todo), var(--badge-progress)); }
+    .role-icon {
+      width: 56px; height: 56px; border-radius: 14px; margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .role-card h3 { font-size: 17px; font-weight: 600; margin: 0 0 8px; color: #fff; }
+    .role-card p { font-size: 13px; color: var(--text-2); margin: 0; line-height: 1.5; }
+    .role-tag {
+      display: inline-block; padding: 4px 10px; border-radius: 6px;
+      font-size: 11px; font-weight: 600; margin-top: 12px;
+    }
+    .role-tag.admin { background: rgba(245,158,11,.15); color: var(--accent); }
+    .role-tag.employee { background: rgba(99,102,241,.15); color: var(--badge-todo); }
+    .role-tag.super { background: rgba(16,185,129,.15); color: var(--primary); }
+
+    /* Flow Diagram */
+    .flow {
+      display: flex; align-items: center; justify-content: center; gap: 0;
+      padding: 32px 0; overflow-x: auto;
+    }
+    .flow-node {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px 20px; text-align: center;
+      min-width: 120px;
+    }
+    .flow-node h4 { font-size: 14px; font-weight: 600; margin: 0 0 4px; color: #fff; }
+    .flow-node p { font-size: 12px; color: var(--text-2); margin: 0; }
+    .flow-arrow {
+      width: 48px; height: 2px; position: relative; flex-shrink: 0;
+    }
+    .flow-arrow::after {
+      content: ""; position: absolute; right: 0; top: -4px;
+      border: 5px solid transparent; border-left: 8px solid var(--muted);
+    }
+
+    /* Employee Card Preview */
+    .emp-card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px; max-width: 320px;
+    }
+    .emp-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .emp-avatar {
+      width: 52px; height: 52px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--badge-todo), var(--badge-progress));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .emp-name { font-size: 16px; font-weight: 600; color: #fff; margin: 0 0 4px; }
+    .emp-role { font-size: 13px; color: var(--text-2); margin: 0; }
+    .emp-stat {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .emp-stat:last-child { border-bottom: none; }
+    .emp-stat-label { font-size: 13px; color: var(--text-2); }
+    .emp-stat-val { font-size: 14px; font-weight: 600; }
+    .emp-stat-val.green { color: var(--primary); }
+    .emp-stat-val.yellow { color: var(--accent); }
+    .emp-stat-val.red { color: var(--danger); }
+    .emp-badges { display: flex; gap: 6px; margin-top: 16px; flex-wrap: wrap; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;
+    }
+    .badge-todo { background: rgba(99,102,241,.15); color: var(--badge-todo); }
+    .badge-progress { background: rgba(245,158,11,.15); color: var(--accent); }
+    .badge-done { background: rgba(16,185,129,.15); color: var(--primary); }
+    .badge-ot { background: rgba(245,158,11,.15); color: var(--accent); border: 1px dashed var(--accent); }
+
+    /* Kanban Preview */
+    .kanban {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    }
+    .kanban-col {
+      background: var(--panel-2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px;
+    }
+    .kanban-col h4 { font-size: 13px; font-weight: 600; margin: 0 0 10px; color: var(--text-2); text-transform: uppercase; letter-spacing: .05em; }
+    .kanban-card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px; margin-bottom: 8px;
+    }
+    .kanban-card h5 { font-size: 13px; font-weight: 600; margin: 0 0 6px; color: #fff; }
+    .kanban-card p { font-size: 11px; color: var(--muted); margin: 0; display: flex; justify-content: space-between; }
+    .kanban-emp {
+      background: var(--panel-2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px; margin-bottom: 8px;
+    }
+    .kanban-emp p { font-size: 12px; color: var(--text-2); margin: 0 0 6px; }
+    .kanban-emp h5 { font-size: 12px; font-weight: 600; margin: 0; color: #fff; }
+
+    /* Permissions Table */
+    .perm-table { width: 100%; border-collapse: collapse; }
+    .perm-table th, .perm-table td {
+      padding: 12px 16px; text-align: left; font-size: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .perm-table th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+    .perm-table td:first-child { color: var(--text-2); }
+    .check { color: var(--primary); }
+    .cross { color: var(--danger); opacity: .4; }
+
+    /* Notification Flow */
+    .notif-list { display: flex; flex-direction: column; gap: 10px; }
+    .notif-item {
+      display: flex; align-items: center; gap: 14px;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px;
+    }
+    .notif-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .notif-content h4 { font-size: 14px; font-weight: 600; margin: 0 0 2px; color: #fff; }
+    .notif-content p { font-size: 12px; color: var(--text-2); margin: 0; }
+    .notif-arrow { color: var(--muted); font-size: 12px; margin: 0 auto; }
+    .notif-target { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px; }
+
+    /* Stat bar */
+    .stat-bar { display: flex; align-items: center; gap: 14px; }
+    .stat-bar-label { font-size: 13px; color: var(--text-2); min-width: 100px; }
+    .stat-bar-track { flex: 1; height: 8px; background: var(--panel-2); border-radius: 4px; overflow: hidden; }
+    .stat-bar-fill { height: 100%; border-radius: 4px; }
+    .stat-bar-val { font-size: 13px; font-weight: 600; min-width: 70px; text-align: right; }
+
+    /* OT section */
+    .ot-card {
+      background: var(--panel); border: 1px dashed var(--accent);
+      border-radius: 12px; padding: 16px;
+    }
+    .ot-card h4 { font-size: 14px; font-weight: 600; margin: 0 0 8px; color: var(--accent); }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .grid-3 { grid-template-columns: 1fr; }
+      .grid-4 { grid-template-columns: repeat(2, 1fr); }
+      .grid-2 { grid-template-columns: 1fr; }
+      .kanban { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .wrap { padding: 32px 16px 64px; }
+      .hero h1 { font-size: 28px; }
+      .grid-4 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-badge">System Architecture</div>
+    <h1>Axovion Employee Management System</h1>
+    <p>Attendance tracking, task management, leave system, and overtime — all in one panel with role-based access.</p>
+  </div>
+
+  <!-- 01: Roles -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background: var(--primary); color: #fff;">01</div>
+      <h2>Role Hierarchy</h2>
+      <span>3 roles, zero by default</span>
+    </div>
+    <div class="grid-3">
+      <div class="role-card super">
+        <div class="role-icon" style="background: rgba(16,185,129,.15);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <h3>Super Admin</h3>
+        <p>One account. Full control. Creates/deletes employees and admins. Verifies attendance. Manages all permissions.</p>
+        <span class="role-tag super">1 account only</span>
+      </div>
+      <div class="role-card admin">
+        <div class="role-icon" style="background: rgba(245,158,11,.15);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h3>Admin</h3>
+        <p>Zero permissions by default. Super Admin assigns: create employees, approve attendance, approve leaves, assign tasks.</p>
+        <span class="role-tag admin">Multiple accounts</span>
+      </div>
+      <div class="role-card employee">
+        <div class="role-icon" style="background: rgba(99,102,241,.15);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--badge-todo)" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <h3>Employee</h3>
+        <p>Clock in/out, apply leaves, log task time, see own hours and overtime. Cannot delete or manage others.</p>
+        <span class="role-tag employee">N accounts</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 02: Attendance Rules -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background: var(--info); color: #fff;">02</div>
+      <h2>Attendance Rules</h2>
+      <span>208 hrs, 4 leaves, auto-reset</span>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3 class="card-title" style="color: var(--primary);">Monthly Target</h3>
+        <div style="margin: 16px 0;">
+          <div class="stat-bar">
+            <div class="stat-bar-label">Target</div>
+            <div class="stat-bar-track"><div class="stat-bar-fill" style="width: 100%; background: var(--primary);"></div></div>
+            <div class="stat-bar-val" style="color: var(--primary);">208 hrs</div>
+          </div>
+          <div class="stat-bar" style="margin-top: 12px;">
+            <div class="stat-bar-label">Working days</div>
+            <div class="stat-bar-track"><div class="stat-bar-fill" style="width: 86.7%; background: var(--info);"></div></div>
+            <div class="stat-bar-val">26 days</div>
+          </div>
+          <div class="stat-bar" style="margin-top: 12px;">
+            <div class="stat-bar-label">Hours/day</div>
+            <div class="stat-bar-track"><div class="stat-bar-fill" style="width: 50%; background: var(--badge-todo);"></div></div>
+            <div class="stat-bar-val">8 hrs</div>
+          </div>
+        </div>
+        <p class="card-text">26 days × 8 hrs = 208 hrs/month. Calendar month system. Auto-reset on 1st of every month.</p>
+      </div>
+      <div class="card">
+        <h3 class="card-title" style="color: var(--accent);">Leave Policy</h3>
+        <p class="card-text" style="margin-bottom: 16px;">4 leaves per employee per month. Reset on 1st. Unused leaves lapse — no carry over.</p>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <span class="badge badge-todo">4 leaves/month</span>
+          <span class="badge badge-done">Half-day = 0.5</span>
+          <span class="badge badge-progress">Full-day = 1</span>
+        </div>
+        <p class="card-text" style="margin-top: 14px; font-size: 13px; color: var(--muted);">Advance and same-day leave both allowed. Approved by Admin or Super Admin.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top: 16px;">
+      <h3 class="card-title">New Employee — Pro-rated Target</h3>
+      <p class="card-text">When an employee joins mid-month, the system auto-calculates their target based on remaining working days. No manual math needed.</p>
+    </div>
+  </div>
+
+  <!-- 03: Clock In/Out -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background: var(--badge-done); color: #fff;">03</div>
+      <h2>Clock In / Out Flow</h2>
+      <span>Manual, one at a time</span>
+    </div>
+    <div class="flow">
+      <div class="flow-node" style="border-color: var(--primary);">
+        <h4>Employee</h4>
+        <p>Clocks In</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-node">
+        <h4>Session Active</h4>
+        <p>1 at a time only</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-node">
+        <h4>Employee</h4>
+        <p>Clocks Out</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-node" style="border-color: var(--accent);">
+        <h4>Admin/Super Admin</h4>
+        <p>Bulk Verify</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-node" style="border-color: var(--info);">
+        <h4>Hours Calculated</h4>
+        <p>Auto-added to target</p>
+      </div>
+    </div>
+    <div class="grid-4" style="margin-top: 24px;">
+      <div class="card"><h4 class="card-title">Manual Only</h4><p class="card-text">No auto clock-out. Employee must clock out themselves.</p></div>
+      <div class="card"><h4 class="card-title">One Active Session</h4><p class="card-text">Cannot clock in again until clocked out.</p></div>
+      <div class="card"><h4 class="card-title">Bulk Verify</h4><p class="card-text">One click approves all entries for that day.</p></div>
+      <div class="card"><h4 class="card-title">Correction Request</h4><p class="card-text">Employee requests fix → Admin approves → reason logged.</p></div>
+    </div>
+  </div>
+
+  <!-- 04: Overtime -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background: var(--accent); color: #fff;">04</div>
+      <h2>Overtime</h2>
+      <span>Tracked separately, never offsets 208</span>
+    </div>
+    <div class="flow">
+      <div class="flow-node">
+        <h4>Employee</h4>
+        <p>Tells Admin OT</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-node" style="border-color: var(--accent);">
+        <h4>Admin</h4>
+        <p>Approves / Assigns Project</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-node">
+        <h4>Admin</h4>
+        <p>Logs Hours in System</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-node" style="border-color: var(--primary);">
+        <h4>Portal</h4>
+        <p>OT Updates Automatically</p>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top: 24px;">
+      <div class="card">
+        <h4 class="card-title">Pre-approved & Retroactive</h4>
+        <p class="card-text">Both allowed. Employee can inform Admin before or after doing OT. Admin decides if reason is valid.</p>
+      </div>
+      <div class="card">
+        <h4 class="card-title">Fields Required</h4>
+        <p class="card-text">Employee, date, hours, reason/project. Reason and project are mandatory for audit trail.</p>
+      </div>
+    </div>
+    <div class="ot-card" style="margin-top: 16px;">
+      <h4>Separate from 208 Target</h4>
+      <p class="card-text">Overtime does NOT offset the 208 shortfall. They're tracked independently. OT = reward, 208 = requirement.</p>
+    </div>
+  </div>
+
+  <!-- 05: Task Manager -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background: var(--badge-todo); color: #fff;">05</div>
+      <h2>Task Manager — Kanban</h2>
+      <span>Tasks move, employee cards stay</span>
+    </div>
+    <div class="grid-2">
+      <div>
+        <h4 style="font-size: 14px; color: var(--text-2); margin: 0 0 14px; text-transform: uppercase; letter-spacing: .05em;">Kanban Board</h4>
+        <div class="kanban">
+          <div class="kanban-col">
+            <h4>To Do</h4>
+            <div class="kanban-card">
+              <h5>Task Title</h5>
+              <p><span>Deadline</span><span>Assignee</span></p>
+            </div>
+            <div class="kanban-card">
+              <h5>Task Title</h5>
+              <p><span>Deadline</span><span>Assignee</span></p>
+            </div>
+          </div>
+          <div class="kanban-col">
+            <h4>In Progress</h4>
+            <div class="kanban-card">
+              <h5>Task Title</h5>
+              <p><span>Deadline</span><span>Assignee</span></p>
+            </div>
+          </div>
+          <div class="kanban-col">
+            <h4>Done</h4>
+            <div class="kanban-card">
+              <h5>Task Title</h5>
+              <p><span>Deadline</span><span>Assignee</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h4 style="font-size: 14px; color: var(--text-2); margin: 0 0 14px; text-transform: uppercase; letter-spacing: .05em;">Assigned Employees Panel</h4>
+        <div class="kanban-col" style="padding: 14px;">
+          <div class="kanban-emp">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <h5>Ali Hassan</h5>
+              <span style="font-size: 11px; color: var(--muted);">Profile Card</span>
+            </div>
+            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+              <span class="badge badge-todo">2 To Do</span>
+              <span class="badge badge-progress">1 In Progress</span>
+              <span class="badge badge-done">3 Done</span>
+            </div>
+          </div>
+          <div class="kanban-emp">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <h5>Sarah Khan</h5>
+              <span style="font-size: 11px; color: var(--muted);">Profile Card</span>
+            </div>
+            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+              <span class="badge badge-todo">1 To Do</span>
+              <span class="badge badge-done">2 Done</span>
+            </div>
+          </div>
+          <p style="font-size: 12px; color: var(--muted); text-align: center; margin: 12px 0 0;">Employee cards show task status badges. "No tasks assigned" shown if empty.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 06: Employee Profile Card -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background: var(--danger); color: #fff;">06</div>
+      <h2>Employee Profile Card</h2>
+      <span>Full info at a glance</span>
+    </div>
+    <div class="grid-2">
+      <div class="emp-card">
+        <div class="emp-header">
+          <div class="emp-avatar">AH</div>
+          <div>
+            <h3 class="emp-name">Ali Hassan</h3>
+            <p class="emp-role">Frontend Developer</p>
+          </div>
+        </div>
+        <div class="emp-stat">
+          <span class="emp-stat-label">Hours Completed</span>
+          <span class="emp-stat-val green">176 / 208 hrs</span>
+        </div>
+        <div class="emp-stat">
+          <span class="emp-stat-label">Hours Remaining</span>
+          <span class="emp-stat-val yellow">32 hrs</span>
+        </div>
+        <div class="emp-stat">
+          <span class="emp-stat-label">Leaves Used</span>
+          <span class="emp-stat-val">2 / 4</span>
+        </div>
+        <div class="emp-badges">
+          <span class="badge badge-ot">+12 hrs OT</span>
+        </div>
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+          <p style="font-size: 12px; color: var(--muted); margin: 0 0 8px; text-transform: uppercase; letter-spacing: .05em;">Task Status</p>
+          <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+            <span class="badge badge-todo">2 To Do</span>
+            <span class="badge badge-progress">1 In Progress</span>
+            <span class="badge badge-done">3 Done</span>
+          </div>
+        </div>
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+          <p style="font-size: 12px; color: var(--muted); margin: 0 0 8px; text-transform: uppercase; letter-spacing: .05em;">Overtime</p>
+          <p style="font-size: 13px; color: var(--accent); margin: 0;">+12 hours — Project Alpha (8 hrs), Bug Fix (4 hrs)</p>
+        </div>
+      </div>
+      <div class="card">
+        <h3 class="card-title">What's on the Card</h3>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <span style="color: var(--primary); font-size: 16px;">✓</span>
+            <p class="card-text">Name, photo (upload + initials fallback)</p>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <span style="color: var(--primary); font-size: 16px;">✓</span>
+            <p class="card-text">208-hour counter: completed + remaining</p>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <span style="color: var(--primary); font-size: 16px;">✓</span>
+            <p class="card-text">Leaves used: X / 4</p>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <span style="color: var(--primary); font-size: 16px;">✓</span>
+            <p class="card-text">Overtime section: badge + number + reason/project</p>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <span style="color: var(--primary); font-size: 16px;">✓</span>
+            <p class="card-text">Task status badges per Kanban column</p>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <span style="color: var(--primary); font-size: 16px;">✓</span>
+            <p class="card-text">All tasks listed (full profile)</p>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <span style="color: var(--primary); font-size: 16px;">✓</span>
+            <p class="card-text">All leaves listed</p>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <span style="color: var(--primary); font-size: 16px;">✓</span>
+            <p class="card-text">"No tasks assigned" shown if empty</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 07: Notifications -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background: var(--badge-progress); color: #fff;">07</div>
+      <h2>In-App Notifications</h2>
+      <span>In-app only, no email/push</span>
+    </div>
+    <div class="notif-list">
+      <div class="notif-item">
+        <div class="notif-icon" style="background: rgba(99,102,241,.15);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--badge-todo)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="notif-content">
+          <h4>Leave Applied</h4>
+          <p>Employee applies for leave</p>
+        </div>
+        <span class="notif-arrow">→</span>
+        <span class="notif-target" style="background: rgba(16,185,129,.15); color: var(--primary);">Admin / Super Admin</span>
+      </div>
+      <div class="notif-item">
+        <div class="notif-icon" style="background: rgba(16,185,129,.15);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="notif-content">
+          <h4>Leave Approved / Rejected</h4>
+          <p>Admin/Super Admin decides</p>
+        </div>
+        <span class="notif-arrow">→</span>
+        <span class="notif-target" style="background: rgba(99,102,241,.15); color: var(--badge-todo);">Employee</span>
+      </div>
+      <div class="notif-item">
+        <div class="notif-icon" style="background: rgba(59,130,246,.15);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--info)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="notif-content">
+          <h4>Attendance Pending Verification</h4>
+          <p>Daily clock entries need review</p>
+        </div>
+        <span class="notif-arrow">→</span>
+        <span class="notif-target" style="background: rgba(16,185,129,.15); color: var(--primary);">Super Admin</span>
+      </div>
+      <div class="notif-item">
+        <div class="notif-icon" style="background: rgba(245,158,11,.15);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        </div>
+        <div class="notif-content">
+          <h4>OT Request Submitted</h4>
+          <p>Employee notifies Admin verbally</p>
+        </div>
+        <span class="notif-arrow">→</span>
+        <span class="notif-target" style="background: rgba(245,158,11,.15); color: var(--accent);">Admin</span>
+      </div>
+      <div class="notif-item">
+        <div class="notif-icon" style="background: rgba(16,185,129,.15);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="notif-content">
+          <h4>OT Approved</h4>
+          <p>Admin logs hours, portal updates</p>
+        </div>
+        <span class="notif-arrow">→</span>
+        <span class="notif-target" style="background: rgba(99,102,241,.15); color: var(--badge-todo);">Employee</span>
+      </div>
+      <div class="notif-item">
+        <div class="notif-icon" style="background: rgba(244,63,94,.15);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <div class="notif-content">
+          <h4>Attendance Correction Request</h4>
+          <p>Employee requests clock edit</p>
+        </div>
+        <span class="notif-arrow">→</span>
+        <span class="notif-target" style="background: rgba(16,185,129,.15); color: var(--primary);">Admin / Super Admin</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 08: Permissions Matrix -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background: var(--muted); color: #fff;">08</div>
+      <h2>Permissions Matrix</h2>
+      <span>Admin has zero by default</span>
+    </div>
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <table class="perm-table">
+        <thead>
+          <tr>
+            <th>Permission</th>
+            <th style="text-align: center;">Super Admin</th>
+            <th style="text-align: center;">Admin</th>
+            <th style="text-align: center;">Employee</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Create Employee Account</td><td style="text-align: center;"><span class="check">✓</span></td><td style="text-align: center;">Opt-in</td><td style="text-align: center;"><span class="cross">✕</span></td></tr>
+          <tr><td>Delete Employee Account</td><td style="text-align: center;"><span class="check">✓</span></td><td style="text-align: center;"><span class="cross">✕</span></td><td style="text-align: center;"><span class="cross">✕</span></td></tr>
+          <tr><td>Verify Attendance</td><td style="text-align: center;"><span class="check">✓</span></td><td style="text-align: center;">Opt-in</td><td style="text-align: center;"><span class="cross">✕</span></td></tr>
+          <tr><td>Edit Attendance Records</td><td style="text-align: center;"><span class="check">✓</span></td><td style="text-align: center;">Opt-in</td><td style="text-align: center;"><span class="cross">✕</span></td></tr>
+          <tr><td>Approve Leave</td><td style="text-align: center;"><span class="check">✓</span></td><td style="text-align: center;">Opt-in</td><td style="text-align: center;"><span class="cross">✕</span></td></tr>
+          <tr><td>Assign Tasks</td><td style="text-align: center;"><span class="check">✓</span></td><td style="text-align: center;">Opt-in</td><td style="text-align: center;"><span class="cross">✕</span></td></tr>
+          <tr><td>Manage Tasks</td><td style="text-align: center;"><span class="check">✓</span></td><td style="text-align: center;">Opt-in</td><td style="text-align: center;"><span class="cross">✕</span></td></tr>
+          <tr><td>Log Overtime</td><td style="text-align: center;"><span class="check">✓</span></td><td style="text-align: center;">Opt-in</td><td style="text-align: center;"><span class="cross">✕</span></td></tr>
+          <tr><td>Create Admin Account</td><td style="text-align: center;"><span class="check">✓</span></td><td style="text-align: center;"><span class="cross">✕</span></td><td style="text-align: center;"><span class="cross">✕</span></td></tr>
+          <tr><td>Manage Admin Permissions</td><td style="text-align: center;"><span class="check">✓</span></td><td style="text-align: center;"><span class="cross">✕</span></td><td style="text-align: center;"><span class="cross">✕</span></td></tr>
+          <tr><td>View All Employees</td><td style="text-align: center;"><span class="check">✓</span></td><td style="text-align: center;"><span class="check">✓</span></td><td style="text-align: center;"><span class="cross">✕</span></td></tr>
+          <tr><td>View Own Data Only</td><td style="text-align: center;"><span class="cross">✕</span></td><td style="text-align: center;"><span class="cross">✕</span></td><td style="text-align: center;"><span class="check">✓</span></td></tr>
+          <tr><td>Clock In / Out</td><td style="text-align: center;"><span class="cross">✕</span></td><td style="text-align: center;"><span class="cross">✕</span></td><td style="text-align: center;"><span class="check">✓</span></td></tr>
+          <tr><td>Apply Leave</td><td style="text-align: center;"><span class="cross">✕</span></td><td style="text-align: center;"><span class="cross">✕</span></td><td style="text-align: center;"><span class="check">✓</span></td></tr>
+          <tr><td>Request Correction</td><td style="text-align: center;"><span class="cross">✕</span></td><td style="text-align: center;"><span class="cross">✕</span></td><td style="text-align: center;"><span class="check">✓</span></td></tr>
+          <tr><td>View Reports / Analytics</td><td style="text-align: center;"><span class="check">✓</span></td><td style="text-align: center;"><span class="check">✓</span></td><td style="text-align: center;"><span class="cross">✕</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 09: Reports -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background: var(--info); color: #fff;">09</div>
+      <h2>Reports & Analytics</h2>
+      <span>Admin + Super Admin only</span>
+    </div>
+    <div class="grid-3">
+      <div class="card">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(16,185,129,.15); display: flex; align-items: center; justify-content: center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <h4 class="card-title" style="margin: 0;">Monthly Summary</h4>
+        </div>
+        <p class="card-text">Total hours, OT, leave usage per employee per month.</p>
+      </div>
+      <div class="card">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(59,130,246,.15); display: flex; align-items: center; justify-content: center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--info)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <h4 class="card-title" style="margin: 0;">Hours Trends</h4>
+        </div>
+        <p class="card-text">Hours over time. Spot consistency issues early.</p>
+      </div>
+      <div class="card">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(245,158,11,.15); display: flex; align-items: center; justify-content: center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h4 class="card-title" style="margin: 0;">Overtime Tracking</h4>
+        </div>
+        <p class="card-text">Who has OT, how much, and which projects absorbed it.</p>
+      </div>
+      <div class="card">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(99,102,241,.15); display: flex; align-items: center; justify-content: center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--badge-todo)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <h4 class="card-title" style="margin: 0;">Leave Usage</h4>
+        </div>
+        <p class="card-text">Leaves taken vs. available per employee per month.</p>
+      </div>
+      <div class="card">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(16,185,129,.15); display: flex; align-items: center; justify-content: center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <h4 class="card-title" style="margin: 0;">Attendance Rates</h4>
+        </div>
+        <p class="card-text">Who met 208 target, who fell short, who exceeded.</p>
+      </div>
+      <div class="card">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(244,63,94,.15); display: flex; align-items: center; justify-content: center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <h4 class="card-title" style="margin: 0;">Target Missers</h4>
+        </div>
+        <p class="card-text">Who consistently misses 208 target — flag for review.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10: Tech Stack -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background: #8b5cf6; color: #fff;">10</div>
+      <h2>Tech Stack</h2>
+      <span>What's being used</span>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3 class="card-title">Frontend</h3>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
+          <span class="badge badge-todo">React / Next.js</span>
+          <span class="badge badge-progress">Same panel, role-based views</span>
+        </div>
+        <p class="card-text" style="margin-top: 12px;">Single codebase. Different views based on logged-in role. No separate employee portal.</p>
+      </div>
+      <div class="card">
+        <h3 class="card-title">Backend + Database</h3>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
+          <span class="badge badge-progress">Node.js</span>
+          <span class="badge badge-ot">MongoDB</span>
+        </div>
+        <p class="card-text" style="margin-top: 12px;">REST/GraphQL API for clock in/out, tasks, leaves, OT, reports. MongoDB for flexible schema.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="text-align: center; padding: 40px 0; border-top: 1px solid var(--border); margin-top: 48px;">
+    <p style="color: var(--muted); font-size: 13px; margin: 0;">Axovion Employee Management System — 47 questions answered, 0 assumptions made</p>
+  </div>
+
+</div>
+</body>
+</html>

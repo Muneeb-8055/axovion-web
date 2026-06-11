@@ -1,0 +1,350 @@
+version: 1
+plan:
+  name: "Axovion EMS — Backend Track"
+  max_concurrency: 4
+  max_consecutive_failures: 2
+  max_cycles: 10
+  auto_reject_retries: 1
+
+tasks:
+  - id: backend-ems
+    title: "Build backend EMS: models, routes, auth expansion, reports API"
+    prompt: |
+      Build the full Employee Management System backend for Axovion.io.
+
+      Context from QA:
+      - 208 hrs/month target = 26 working days × 8 hrs
+      - 4 leaves/month, reset on 1st, half-day=0.5, full-day=1, unused lapses
+      - Calendar month system, auto-reset on 1st
+      - Overtime tracked separately, does NOT offset 208 shortfall
+      - Attendance editable with audit log (reason required)
+      - Employee initiates correction requests; Admin/Super Admin approves
+      - New employee mid-month → prorated target
+      - Clock in/out: manual only, one active at a time, bulk verify by day
+      - Both advance and same-day leave allowed
+      - Admin approves OT with reason/project, manually logs hours, both pre-approved and retroactive allowed
+      - Reports: monthly summary, hours trends, OT tracking, leave usage, attendance rates, target missers
+      - Super Admin: one account, full control, manages Admin permissions
+      - Admin: zero permissions by default, Super Admin enables per-admin
+      - Admin cannot delete another Admin
+      - Deactivated employees can be reactivated
+      - Employee sees only their own data; Admin and Super Admin see all
+
+      Stack: FastAPI + Motor (async MongoDB) + Pydantic + JWT (python-jose + bcrypt) + python-multipart
+
+      WORKSPACE: D:\axovion-web
+
+      === PHASE 1: Expand existing User model and auth ===
+
+      File: backend/models/schemas.py
+      - Add new User roles: Literal["super_admin", "admin", "employee"]
+      - Add AdminPermissions model: create_employee, approve_attendance, approve_leaves, assign_tasks, manage_tasks, edit_attendance (all bool, default False)
+      - Add passwordHash field to User
+      - Add adminPermissions field to User (only when role is "admin")
+
+      File: backend/services/auth_service.py (read first, then extend)
+      - Extend existing JWT functions to support role checking
+      - Add require_super_admin(), require_admin() dependency functions
+      - Add check_permission(permission_name) function
+
+      === PHASE 2: New EMS Models ===
+
+      File: backend/models/ems_models.py (create new)
+      Define these Pydantic models:
+
+      EmployeeProfile:
+        - id, email, name, role (super_admin/admin/employee), photoUrl (optional)
+        - adminPermissions (only for admin role)
+        - isActive (bool, default True)
+        - createdAt, updatedAt
+
+      AttendanceRecord:
+        - id, employeeId, clockIn (datetime), clockOut (datetime, nullable)
+        - totalHours (float, computed)
+        - isVerified (bool, default False)
+        - verifiedBy (optional str — user id)
+        - verifiedAt (optional datetime)
+        - isCorrection (bool, default False)
+        - correctionReason (optional str)
+        - createdAt, updatedAt
+
+      Leave:
+        - id, employeeId, date (date), type (half/full), status (pending/approved/rejected)
+        - appliedAt, approvedAt, approvedBy, rejectionReason
+
+      Overtime:
+        - id, employeeId, date, hours (float), reason, project, approvedBy
+        - status (approved), createdAt
+
+      Task (update existing backend/models/schemas.py):
+        - Change assignee from Optional[str] to Optional[str] (one employee id, not multiple)
+        - Keep status as Literal["todo", "in-progress", "review", "done"]
+        - Add employeeId field pointing to assigned employee
+
+      === PHASE 3: EMS API Routes ===
+
+      File: backend/routes/employees.py (create new)
+      - POST /api/employees — Super Admin creates employee account (name, email, password, role)
+      - GET /api/employees — Admin/Super Admin lists all employees with profile data
+      - GET /api/employees/me — Employee sees own profile (hours, leaves, OT, tasks)
+      - GET /api/employees/{id} — Admin/Super Admin sees employee full profile
+      - PUT /api/employees/{id} — Admin/Super Admin updates employee
+      - DELETE /api/employees/{id} — Super Admin deletes employee
+      - PUT /api/employees/{id}/deactivate — Super Admin deactivates
+      - PUT /api/employees/{id}/reactivate — Super Admin reactivates
+      - GET /api/employees/{id}/profile-summary — returns full profile card data (tasks, leaves, hours, OT, status badges)
+      - PUT /api/admins/{id}/permissions — Super Admin sets admin permissions
+
+      File: backend/routes/attendance.py (create new)
+      - POST /api/attendance/clock-in — Employee clocks in
+      - POST /api/attendance/clock-out — Employee clocks out
+      - GET /api/attendance — Admin/Super Admin lists attendance records (filter by date range, employee)
+      - GET /api/attendance/pending — Super Admin lists unverified records
+      - POST /api/attendance/verify — Super Admin bulk verifies by date
+      - POST /api/attendance/correct — Employee requests correction (reason required)
+      - PUT /api/attendance/correct/{id}/approve — Admin/Super Admin approves correction
+      - GET /api/attendance/summary/{employeeId}/{month}/{year} — monthly hours summary
+      - GET /api/attendance/my — Employee sees own attendance
+      - GET /api/attendance/my/summary — Employee sees own monthly hours (completed, remaining, OT)
+
+      File: backend/routes/leaves.py (create new)
+      - POST /api/leaves — Employee applies for leave (date, type: half/full)
+      - GET /api/leaves — Admin/Super Admin lists all leaves (filter by status, date range)
+      - GET /api/leaves/my — Employee sees own leaves
+      - PUT /api/leaves/{id}/approve — Admin/Super Admin approves
+      - PUT /api/leaves/{id}/reject — Admin/Super Admin rejects (reason required)
+      - GET /api/leaves/balance/{employeeId} — remaining leaves for current month
+      - GET /api/leaves/balance/my — Employee sees own leave balance
+
+      File: backend/routes/overtime.py (create new)
+      - POST /api/overtime — Admin logs overtime for an employee (employeeId, date, hours, reason, project)
+      - GET /api/overtime — Admin/Super Admin lists all overtime records
+      - GET /api/overtime/my — Employee sees own overtime
+      - GET /api/overtime/{employeeId} — Admin/Super Admin sees employee overtime
+
+      File: backend/routes/reports.py (create new)
+      - GET /api/reports/monthly-summary/{month}/{year} — monthly summary (total hours, OT, leave usage per employee)
+      - GET /api/reports/hours-trends/{employeeId} — hours over time
+      - GET /api/reports/leave-usage/{month}/{year} — leaves taken vs available
+      - GET /api/reports/attendance-rates/{month}/{year} — who met target, who fell short
+      - GET /api/reports/target-missers/{month}/{year} — employees below 208 target
+      - GET /api/reports/overtime-tracking/{month}/{year} — OT per employee, per project
+
+      === PHASE 4: Register routes in server.py ===
+
+      - Add new routers import and include_router calls for: employees, attendance, leaves, overtime, reports
+
+      === PHASE 5: db.py indexes ===
+
+      File: backend/services/db.py
+      - Add indexes for employees, attendance, leaves, overtime collections
+
+      Important notes:
+      - Read existing backend/services/auth_service.py before extending it
+      - Read existing backend/routes/auth.py to understand the existing auth patterns
+      - Read existing backend/models/schemas.py before modifying
+      - Use the existing serialize_doc and deserialize_doc helpers from services/db.py
+      - All routes must check JWT token and role
+      - For 208-hour calculation: count all verified clock-in/out pairs per employee per month
+      - For monthly reset: calculate working days remaining in month for new employees
+      - Write deliverable.md with: list of files created/modified, key design decisions, any issues
+    assigned_to: general
+    verified_by: code-reviewer
+    verify_prompt: |
+      Read all files created/modified. Verify:
+      1. JWT auth checks are present on every EMS route (no public endpoints except /clock-in, /clock-out for employees)
+      2. Role checks: Super Admin routes check role=super_admin, Admin routes check role in [super_admin, admin], Employee routes check role=employee
+      3. 208-hour calculation: verifies totalHours = clockOut - clockIn for verified records only
+      4. Leave balance: 4 per month, resets on 1st, half-day = 0.5, unused lapses
+      5. Overtime: separate from 208, does not offset shortfall
+      6. Permission matrix: Admin has zero permissions by default, enabled individually
+      7. No hardcoded secrets or passwords in code
+      8. All Pydantic models have proper defaults and optional fields
+      Re-run any existing tests if present (cd backend && pytest). Report any issues found.
+
+  - id: frontend-ems
+    title: "Build frontend EMS: pages, employee card, attendance, leaves, overtime, reports"
+    prompt: |
+      Build the full Employee Management System frontend for Axovion.io admin panel.
+
+      Context from QA:
+      - 208 hrs/month target = 26 working days × 8 hrs
+      - 4 leaves/month, reset on 1st, half-day=0.5, full-day=1, unused lapses
+      - Calendar month system, auto-reset on 1st
+      - Overtime tracked separately, does NOT offset 208 shortfall
+      - Attendance editable with audit log (reason required)
+      - Employee initiates correction requests; Admin/Super Admin approves
+      - Clock in/out: manual only, one active at a time, bulk verify by day
+      - Both advance and same-day leave allowed
+      - Employee sees only their own data; Admin and Super Admin see all
+      - Employee profile card: full info (tasks, leaves, hours, OT), status badges per Kanban column
+      - Kanban: To Do → In Progress → Done, task cards move, employee cards stay in Assigned panel
+      - Admin can see all employees
+      - Notifications: in-app only (bell icon)
+
+      Stack: React 19 + Tailwind CSS + Radix UI + Framer Motion + Recharts + React Router v7
+      Backend API base: /api (FastAPI)
+
+      WORKSPACE: D:\axovion-web
+
+      Design: Match the existing dark admin theme. Check frontend/src/App.js and frontend/src/pages/admin/AdminLayout.jsx for current styling patterns. Dark theme: background #12121A, borders rgba(255,255,255,0.1).
+
+      === PHASE 1: API Layer ===
+
+      File: frontend/src/lib/api.js (extend existing)
+      - Add axios instances for EMS endpoints: /employees, /attendance, /leaves, /overtime, /reports
+      - Add helper functions: clockIn(), clockOut(), getEmployees(), getAttendance(), etc.
+
+      === PHASE 2: Shared Components ===
+
+      File: frontend/src/components/EmployeeCard.jsx (create new)
+      - Shows: avatar (upload + initials fallback), name, role
+      - 208-hour counter: "X / 208 hrs" with progress bar (completed in green, remaining in yellow/red)
+      - "X hrs remaining" in red/yellow
+      - Leaves used: "X / 4"
+      - Overtime section: OT badge with "+X hrs" and reason/project list
+      - Task status badges: "2 To Do", "1 In Progress", "3 Done" (colored badges)
+      - "No tasks assigned" shown if empty
+      - Click opens full profile modal/page
+      - Use Framer Motion for card entrance animation
+      - Match dark theme from existing admin pages
+
+      File: frontend/src/components/NotificationBell.jsx (create new)
+      - Bell icon with unread count badge
+      - Dropdown showing: Leave applied, Leave approved/rejected, Attendance pending, OT approved, Correction requested
+      - Clicking marks as read
+      - Uses existing Sonner toast (sonner already installed)
+
+      === PHASE 3: Pages ===
+
+      File: frontend/src/pages/admin/EmployeeManager.jsx (create new)
+      - Employee list with search/filter
+      - Each employee shown as EmployeeCard
+      - "Add Employee" button (Admin/Super Admin with create_employee permission)
+      - Employee creation form: name, email, password, role selection
+      - Admin permissions editor (Super Admin only)
+      - Deactivate/Reactivate buttons
+      - Employee profile modal with full EmployeeCard data
+
+      File: frontend/src/pages/admin/Attendance.jsx (create new)
+      - For Employee: Clock In / Clock Out buttons (show active session state)
+      - Employee sees own attendance log and monthly summary (completed, remaining hours)
+      - For Admin/Super Admin: attendance table by day with bulk verify
+      - Filter by date and employee
+      - Correction request button per record
+      - Pending verification badge with count
+      - Monthly hours counter per employee
+
+      File: frontend/src/pages/admin/Leaves.jsx (create new)
+      - For Employee: leave application form (date picker, half/full day toggle)
+      - Employee sees own leave history and remaining balance
+      - For Admin/Super Admin: all leave applications with approve/reject buttons
+      - Filter by status (pending, approved, rejected), date range
+      - Leave balance per employee visible
+
+      File: frontend/src/pages/admin/Overtime.jsx (create new)
+      - Admin logs OT: select employee, date, hours, reason/project
+      - List of all OT records with employee, date, hours, project
+      - For Employee: sees own OT history
+      - Separate from 208 counter — shown in employee profile card OT section
+
+      File: frontend/src/pages/admin/Reports.jsx (create new)
+      - Monthly summary cards (using Recharts)
+      - Bar chart: hours per employee vs 208 target
+      - Line chart: hours trend over time per employee
+      - Overtime tracking table
+      - Leave usage chart
+      - Attendance rate table
+      - Target missers highlighted in red
+      - Filters: month, year
+
+      === PHASE 4: Kanban Refactor ===
+
+      File: frontend/src/pages/admin/Tasks.jsx (update existing)
+      - Keep existing Kanban: To Do → In Progress → Done
+      - Add Assigned Employees panel on the right side
+      - Panel shows EmployeeCard for each employee with task status badges
+      - When task moves columns, the employee card badge counts update automatically
+      - "No tasks assigned" shown for employees with no tasks
+      - Task card shows: title, deadline, assignee name
+
+      === PHASE 5: AdminLayout Nav Update ===
+
+      File: frontend/src/pages/admin/AdminLayout.jsx (update existing)
+      - Add nav links: Employees, Attendance, Leaves, Overtime, Reports
+      - Role-based visibility:
+        - Employees, Attendance, Leaves, Overtime, Reports: Admin + Super Admin
+        - EmployeeManager sub-links: Add Employee, Manage Employees
+      - Add NotificationBell to the navbar
+
+      === PHASE 6: App.js Route Update ===
+
+      File: frontend/src/App.js (update)
+      - Add imports for: EmployeeManager, Attendance, Leaves, Overtime, Reports
+      - Add routes under AdminLayout:
+        - /admin/employees → EmployeeManager
+        - /admin/attendance → Attendance
+        - /admin/leaves → Leaves
+        - /admin/overtime → Overtime
+        - /admin/reports → Reports
+
+      Important notes:
+      - Read existing frontend/src/pages/admin/AdminLayout.jsx before editing
+      - Read existing frontend/src/pages/admin/Tasks.jsx before editing
+      - Read existing frontend/src/App.js before editing
+      - Read existing frontend/tailwind.config.js for design tokens
+      - Use the same dark theme variables as existing admin pages
+      - All API calls go to /api/employees, /api/attendance, etc.
+      - Radix UI components available (already in package.json): Dialog, Select, Tabs, Toast
+      - Sonner already installed for toasts
+      - date-fns available for date handling
+      - Recharts available for charts
+      - Write deliverable.md with: list of files created/modified, key design decisions, any issues
+    assigned_to: general
+    verified_by: code-reviewer
+    verify_prompt: |
+      Read all files created/modified. Verify:
+      1. Employee card shows 208-hour counter with both completed and remaining, overtime separate section, task status badges
+      2. Attendance page has Clock In/Out for employees, bulk verify for Admin/Super Admin
+      3. Leave page has half-day/full-day toggle, approve/reject for Admin
+      4. Overtime is logged by Admin only, shown separately from 208 counter
+      5. Kanban shows task cards moving, employee cards stay in Assigned panel with status badges
+      6. Routes are protected — check if role-based rendering is in place
+      7. API calls target /api/employees, /api/attendance, /api/leaves, /api/overtime, /api/reports
+      8. No placeholder comments like "// TODO" or "// FIXME"
+      9. Dark theme consistent with existing admin pages
+      Check if the frontend builds: cd frontend && yarn build (if it fails, note the errors in deliverable.md)
+
+  - id: ems-integration
+    title: "Integration verification: backend + frontend"
+    prompt: |
+      Verify the backend API and frontend are properly connected for the Employee Management System.
+
+      Context:
+      - Backend runs on FastAPI (typically port 8000 or as configured)
+      - Frontend proxies /api to the backend
+      - Key endpoints: /api/employees, /api/attendance, /api/leaves, /api/overtime, /api/reports
+
+      Tasks:
+      1. Check if frontend/src/lib/api.js has the correct axios endpoints matching backend routes
+      2. Verify App.js has all 5 new routes: /employees, /attendance, /leaves, /overtime, /reports
+      3. Verify AdminLayout.jsx has nav links for all 5 new pages
+      4. Check backend server.py imports all new routers (employees, attendance, leaves, overtime, reports)
+      5. Verify the Task Kanban (Tasks.jsx) shows EmployeeCard in Assigned panel with status badges
+      6. Check if the EmployeeCard component exists and includes: 208 counter (completed + remaining), OT badge, task status badges
+      7. Verify Attendance.jsx has Clock In/Out for employees and bulk verify for Admin
+      8. Verify the User model in schemas.py has roles: super_admin, admin, employee
+      9. Check if the db.py has indexes for new collections (employees, leaves, overtime)
+
+      Report any mismatches or missing pieces.
+    assigned_to: general
+    depends_on: [backend-ems, frontend-ems]
+    verified_by: code-reviewer
+    verify_prompt: |
+      Run the integration check:
+      1. cd backend && python -c "from server import app; print('Backend imports OK')"
+      2. cd frontend && yarn build 2>&1 | Select-String -Pattern "error|Error|ERROR" -SimpleMatch
+      3. Grep backend for all route imports in server.py — confirm employees, attendance, leaves, overtime, reports routers are all registered
+      4. Grep frontend/src/App.js for all 5 new route imports
+      5. Grep frontend for /api/employees, /api/attendance, /api/leaves, /api/overtime, /api/reports — confirm all are referenced in api.js or component files
+      Report: PASS if all checks succeed, FAIL with specific issues if any check fails.

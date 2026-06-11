@@ -54,6 +54,7 @@ def deserialize_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
 
 async def init_db():
     """Create indexes + seed defaults."""
+    await db.users.create_index("id", unique=True)
     await db.audits.create_index("id", unique=True)
     await db.chats.create_index("sessionId")
     await db.tasks.create_index("id", unique=True)
@@ -61,6 +62,20 @@ async def init_db():
     await db.call_logs.create_index("id", unique=True)
     await db.bookings.create_index("id", unique=True)
     await db.users.create_index("email", unique=True)
+    # EMS indexes
+    await db.attendance.create_index("id", unique=True)
+    await db.attendance.create_index("employeeId")
+    await db.attendance.create_index("clockIn")
+    await db.attendance.create_index([("employeeId", 1), ("clockIn", 1)])
+    await db.leaves.create_index("id", unique=True)
+    await db.leaves.create_index("employeeId")
+    await db.leaves.create_index("date")
+    await db.overtime.create_index("id", unique=True)
+    await db.overtime.create_index("employeeId")
+    await db.overtime.create_index("date")
+    await db.notifications.create_index("id", unique=True)
+    await db.notifications.create_index("employeeId")
+    await db.notifications.create_index([("read", 1), ("createdAt", -1)])
     # Seed default admin user (idempotent)
     from services.auth_service import hash_password
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@axovion.io")

@@ -43,6 +43,38 @@ async def require_admin(authorization: Optional[str] = Header(None)) -> dict:
         raise HTTPException(status_code=401, detail="Missing bearer token")
     token = authorization.replace("Bearer ", "", 1).strip()
     payload = decode_token(token)
-    if payload.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Admin only")
+    if payload.get("role") not in ["admin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Admin access required")
     return payload
+
+
+async def require_super_admin(authorization: Optional[str] = Header(None)) -> dict:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing bearer token")
+    token = authorization.replace("Bearer ", "", 1).strip()
+    payload = decode_token(token)
+    if payload.get("role") != "super_admin":
+        raise HTTPException(status_code=403, detail="Super Admin access required")
+    return payload
+
+
+async def require_employee(authorization: Optional[str] = Header(None)) -> dict:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing bearer token")
+    token = authorization.replace("Bearer ", "", 1).strip()
+    payload = decode_token(token)
+    if payload.get("role") not in ["super_admin", "admin", "employee"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    return payload
+
+
+def check_permission(user_payload: dict, permission: str) -> bool:
+    """Check if an admin has a specific permission enabled."""
+    if user_payload.get("role") == "super_admin":
+        return True
+    if user_payload.get("role") == "admin":
+        perms = user_payload.get("adminPermissions", {})
+        if isinstance(perms, dict):
+            return perms.get(permission, False)
+        return False
+    return False

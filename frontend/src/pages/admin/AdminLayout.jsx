@@ -2,7 +2,8 @@ import React from 'react';
 import { Navigate, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth, clearAuth } from '../../lib/hooks';
 import { LOGO_URL } from '../../lib/content';
-import { LayoutDashboard, ClipboardList, MessageSquare, CalendarCheck, KanbanSquare, BarChart3, Mail, Phone, Settings, LogOut, Search } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, MessageSquare, CalendarCheck, KanbanSquare, BarChart3, Mail, Phone, Settings, LogOut, Search, Users, Clock, CalendarDays, Timer, TrendingUp } from 'lucide-react';
+import NotificationBell from '../../components/NotificationBell';
 
 const NAV = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -10,6 +11,11 @@ const NAV = [
   { to: '/admin/chats', label: 'Chats', icon: MessageSquare },
   { to: '/admin/bookings', label: 'Bookings', icon: CalendarCheck },
   { to: '/admin/tasks', label: 'Tasks', icon: KanbanSquare },
+  { to: '/admin/employees', label: 'Employees', icon: Users },
+  { to: '/admin/attendance', label: 'Attendance', icon: Clock },
+  { to: '/admin/leaves', label: 'Leaves', icon: CalendarDays },
+  { to: '/admin/overtime', label: 'Overtime', icon: Timer },
+  { to: '/admin/reports', label: 'Reports', icon: TrendingUp },
   { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/admin/emails', label: 'Emails', icon: Mail },
   { to: '/admin/calls', label: 'Calls', icon: Phone },
@@ -87,6 +93,7 @@ const AdminLayout = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <a href="/" target="_blank" rel="noreferrer" className="text-xs text-[#C0C0C8] hover:text-white">View site ↗</a>
             <button onClick={logout} className="lg:hidden h-9 w-9 inline-flex items-center justify-center rounded-md text-[#C0C0C8] hover:text-white hover:bg-[#161622]">
               <LogOut className="h-4 w-4" />
