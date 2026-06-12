@@ -11,7 +11,13 @@ ROOT_DIR = Path(__file__).parent.parent
 load_dotenv(ROOT_DIR / ".env")
 
 mongo_url = os.environ["MONGO_URL"]
-_client = AsyncIOMotorClient(mongo_url, tls=True, tlsCAFile=certifi.where())
+# Use TLS for remote (Atlas) connections; skip for local MongoDB
+_use_tls = "localhost" not in mongo_url and "127.0.0.1" not in mongo_url
+_client = AsyncIOMotorClient(
+    mongo_url,
+    tls=_use_tls,
+    tlsCAFile=certifi.where() if _use_tls else None,
+)
 db = _client[os.environ["DB_NAME"]]
 
 def serialize_doc(doc: Dict[str, Any]) -> Dict[str, Any]:

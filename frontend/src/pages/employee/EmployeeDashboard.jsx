@@ -94,7 +94,6 @@ export default function EmployeeDashboard() {
   const completed = summary?.completedHours || 0;
   const target = summary?.targetHours || 208;
   const remaining = summary?.remainingHours ?? (target - completed);
-  const leaveBalance = summary?.leave_balance ?? 4;
   const myTasks = recentTasks;
   const inProgressTasks = myTasks.filter((t) => t.status === 'in_progress').length;
   const doneTasks = myTasks.filter((t) => t.status === 'done').length;
