@@ -55,6 +55,24 @@ const AdminSettings = () => {
         </div>
       </Section>
 
+      <Section title="Employee Management">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <FormField label="Monthly target hours per employee">
+            <input
+              type="number"
+              min="1"
+              step="0.5"
+              value={s.monthlyTargetHours ?? 208}
+              onChange={(e) => f('monthlyTargetHours', Number(e.target.value))}
+              className="ax-input"
+            />
+            <span className="block text-[#A0A0B0] text-xs mt-1">
+              Default is 208 hrs (26 working days × 8 hrs). Change this to set a new target for all employees.
+            </span>
+          </FormField>
+        </div>
+      </Section>
+
       <Section title="Chatbot">
         <FormField label="System prompt override (optional)">
           <textarea value={s.chatbotSystemPrompt || ''} onChange={(e) => f('chatbotSystemPrompt', e.target.value)} rows="6" data-testid="settings-chatbot-prompt" className="ax-input" placeholder="Leave blank to use default Axovion AI prompt" />

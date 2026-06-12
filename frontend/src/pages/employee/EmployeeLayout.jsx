@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useAuth, clearAuth } from '../../lib/hooks';
+import { useEmployeeAuth, clearEmployeeAuth } from '../../lib/hooks';
 import { LOGO_URL } from '../../lib/content';
 import { LayoutDashboard, Clock, CalendarDays, KanbanSquare, Timer, User, LogOut } from 'lucide-react';
 import NotificationBell from '../../components/NotificationBell';
@@ -15,11 +15,11 @@ const NAV = [
 ];
 
 export function EmployeeLayout() {
-  const { user } = useAuth();
+  const { user } = useEmployeeAuth();
   const navigate = useNavigate();
 
   const logout = () => {
-    clearAuth();
+    clearEmployeeAuth();
     navigate('/employee/login');
   };
 
@@ -77,7 +77,7 @@ export function EmployeeLayout() {
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           </div>
           <div className="flex items-center gap-4">
-            <NotificationBell />
+            <NotificationBell useEmployeeToken />
             <a href="/" target="_blank" rel="noreferrer" className="text-xs text-[#606070] hover:text-white">
               axovion.io ↗
             </a>

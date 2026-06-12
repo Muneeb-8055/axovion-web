@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth, setAuth } from '../../lib/hooks';
+import { useEmployeeAuth, setEmployeeAuth } from '../../lib/hooks';
 import { adminApi } from '../../lib/api';
 import { LOGO_URL } from '../../lib/content';
 import { Eye, EyeOff, Loader } from 'lucide-react';
 
 export default function EmployeeLogin() {
-  const { isAuthed, user } = useAuth();
+  const { isAuthed, user } = useEmployeeAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -27,7 +27,7 @@ export default function EmployeeLogin() {
         setLoading(false);
         return;
       }
-      setAuth(data.token, data.user);
+      setEmployeeAuth(data.token, data.user);
       window.location.href = '/employee';
     } catch (err) {
       setError(err?.response?.data?.detail || 'Invalid credentials');

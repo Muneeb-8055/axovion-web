@@ -253,6 +253,7 @@ class Settings(BaseModel):
     highValueBudgetUsd: int = 5000
     autoCallEnabled: bool = False
     autoEmailEnabled: bool = True
+    monthlyTargetHours: float = 208.0
     updatedAt: datetime = Field(default_factory=_now)
 
 

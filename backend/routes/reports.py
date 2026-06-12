@@ -7,8 +7,16 @@ from services.auth_service import require_admin, require_super_admin
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
-TARGET_HOURS = 208
+DEFAULT_TARGET_HOURS = 208
 LEAVES_PER_MONTH = 4
+
+
+async def _get_target_hours() -> float:
+    """Fetch the configured monthly target hours from settings."""
+    s = await db.settings.find_one({"id": "global"})
+    if s and s.get("monthlyTargetHours"):
+        return float(s["monthlyTargetHours"])
+    return float(DEFAULT_TARGET_HOURS)
 
 
 def _parse_month(month: str) -> tuple:
@@ -46,6 +54,7 @@ async def monthly_summary(month: str, user: dict = Depends(require_admin)):
     """Monthly summary: hours, OT, leaves per employee."""
     year, m = _parse_month(month)
     pattern = f"{year}-{m:02d}"
+    target_hours = await _get_target_hours()
 
     employees = db.users.find({"role": {"$in": ["admin", "employee"]}, "isActive": True})
     summaries = []
@@ -77,13 +86,13 @@ async def monthly_summary(month: str, user: dict = Depends(require_admin)):
             "employeeId": emp_id,
             "employeeName": emp.get("name", ""),
             "role": emp.get("role", "employee"),
-            "targetHours": TARGET_HOURS,
+            "targetHours": target_hours,
             "completedHours": round(total_hours, 2),
-            "remainingHours": round(max(0, TARGET_HOURS - total_hours), 2),
+            "remainingHours": round(max(0, target_hours - total_hours), 2),
             "overtimeHours": round(total_ot, 2),
             "leavesUsed": round(leaves_used, 1),
             "leavesRemaining": round(max(0, LEAVES_PER_MONTH - leaves_used), 1),
-            "metTarget": total_hours >= TARGET_HOURS,
+            "metTarget": total_hours >= target_hours,
         })
     return {"month": month, "employees": summaries}
 
@@ -96,6 +105,7 @@ async def hours_trends(
 ):
     """Hours trend for an employee over last N months."""
     now = datetime.now(timezone.utc)
+    target_hours = await _get_target_hours()
     trends = []
     for i in range(months - 1, -1, -1):
         m = now.month - i
@@ -113,7 +123,7 @@ async def hours_trends(
         trends.append({
             "month": pattern,
             "hours": round(total_hours, 2),
-            "target": TARGET_HOURS,
+            "target": target_hours,
         })
     return {"employeeId": employee_id, "trends": trends}
 
@@ -146,9 +156,10 @@ async def leave_usage(month: str, user: dict = Depends(require_admin)):
 
 @router.get("/attendance-rates/{month}")
 async def attendance_rates(month: str, user: dict = Depends(require_admin)):
-    """Who met 208 target, who fell short."""
+    """Who met the target, who fell short."""
     year, m = _parse_month(month)
     pattern = f"{year}-{m:02d}"
+    target_hours = await _get_target_hours()
 
     employees = db.users.find({"role": {"$in": ["admin", "employee"]}, "isActive": True})
     met = []
@@ -165,10 +176,10 @@ async def attendance_rates(month: str, user: dict = Depends(require_admin)):
             "employeeId": emp_id,
             "employeeName": emp.get("name", ""),
             "hoursCompleted": round(total_hours, 2),
-            "hoursShort": round(max(0, TARGET_HOURS - total_hours), 2),
-            "target": TARGET_HOURS,
+            "hoursShort": round(max(0, target_hours - total_hours), 2),
+            "target": target_hours,
         }
-        if total_hours >= TARGET_HOURS:
+        if total_hours >= target_hours:
             met.append(entry)
         else:
             missed.append(entry)
@@ -183,9 +194,10 @@ async def attendance_rates(month: str, user: dict = Depends(require_admin)):
 
 @router.get("/target-missers/{month}")
 async def target_missers(month: str, user: dict = Depends(require_admin)):
-    """Employees who missed the 208-hour target."""
+    """Employees who missed the monthly hours target."""
     year, m = _parse_month(month)
     pattern = f"{year}-{m:02d}"
+    target_hours = await _get_target_hours()
 
     employees = db.users.find({"role": {"$in": ["admin", "employee"]}, "isActive": True})
     missers = []
@@ -197,13 +209,13 @@ async def target_missers(month: str, user: dict = Depends(require_admin)):
             "clockIn": {"$regex": f"^{pattern}"}
         })
         total_hours = await _sum_hours(att_cursor)
-        if total_hours < TARGET_HOURS:
+        if total_hours < target_hours:
             missers.append({
                 "employeeId": emp_id,
                 "employeeName": emp.get("name", ""),
                 "hoursCompleted": round(total_hours, 2),
-                "hoursShort": round(TARGET_HOURS - total_hours, 2),
-                "target": TARGET_HOURS,
+                "hoursShort": round(target_hours - total_hours, 2),
+                "target": target_hours,
             })
     return {"month": month, "missers": missers, "count": len(missers)}
 

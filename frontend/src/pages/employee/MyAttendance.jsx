@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminApi } from '../../lib/api';
+import { empApi } from '../../lib/api';
 import { Clock, CheckCircle2, XCircle, Loader, AlertCircle } from 'lucide-react';
 
 export default function MyAttendance() {
@@ -13,7 +13,7 @@ export default function MyAttendance() {
   const [correctError, setCorrectError] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('ax_token');
+    const token = localStorage.getItem('ax_emp_token');
     if (!token) { navigate('/employee/login'); return; }
     load();
   }, []);
@@ -21,8 +21,8 @@ export default function MyAttendance() {
   const load = async () => {
     try {
       const [attRes, sumRes] = await Promise.all([
-        adminApi.getMyAttendance(50).catch(() => ({ data: { entries: [] } })),
-        adminApi.getMySummary().catch(() => ({ data: null })),
+        empApi.getMyAttendance(50).catch(() => ({ data: { entries: [] } })),
+        empApi.getMySummary().catch(() => ({ data: null })),
       ]);
       setEntries(Array.isArray(attRes.data) ? attRes.data : (attRes.data?.entries || []));
       setSummary(sumRes.data);
@@ -37,7 +37,7 @@ export default function MyAttendance() {
     if (!correctReason.trim()) { setCorrectError('Please provide a reason.'); return; }
     setCorrectError('');
     try {
-      await adminApi.requestCorrection({ entry_id: entryId, reason: correctReason });
+      await empApi.requestCorrection({ entry_id: entryId, reason: correctReason });
       setCorrectingId(null);
       setCorrectReason('');
       await load();
@@ -88,14 +88,14 @@ export default function MyAttendance() {
       {/* Clock In/Out buttons */}
       <div className="flex gap-4">
         <button
-          onClick={async () => { await adminApi.clockIn().catch(() => {}); await load(); }}
+          onClick={async () => { await empApi.clockIn().catch(() => {}); await load(); }}
           className="flex-1 ax-card flex items-center justify-center gap-2 py-4 hover:border-green-500/30 transition-colors cursor-pointer"
         >
           <CheckCircle2 className="h-5 w-5 text-green-400" />
           <span className="font-medium text-white">Clock In</span>
         </button>
         <button
-          onClick={async () => { await adminApi.clockOut().catch(() => {}); await load(); }}
+          onClick={async () => { await empApi.clockOut().catch(() => {}); await load(); }}
           className="flex-1 ax-card flex items-center justify-center gap-2 py-4 hover:border-red-500/30 transition-colors cursor-pointer"
         >
           <XCircle className="h-5 w-5 text-red-400" />

@@ -118,5 +118,6 @@ async def init_db():
             "highValueBudgetUsd": int(os.environ.get("HIGH_VALUE_BUDGET_USD", 5000)),
             "autoCallEnabled": False,
             "autoEmailEnabled": True,
+            "monthlyTargetHours": 208.0,
             "updatedAt": datetime.now(timezone.utc).isoformat(),
         })

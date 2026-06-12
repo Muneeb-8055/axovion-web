@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminApi } from '../../lib/api';
-import { useAuth } from '../../lib/hooks';
+import { empApi } from '../../lib/api';
+import { useEmployeeAuth } from '../../lib/hooks';
 import { User, Mail, Phone, CalendarDays, Clock, TrendingUp, Loader, Camera } from 'lucide-react';
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user } = useEmployeeAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('ax_token');
+    const token = localStorage.getItem('ax_emp_token');
     if (!token) { navigate('/employee/login'); return; }
     load();
   }, []);
@@ -20,8 +20,8 @@ export default function Profile() {
   const load = async () => {
     try {
       const [profRes, sumRes] = await Promise.all([
-        adminApi.getMyProfile().catch(() => ({ data: null })),
-        adminApi.getMySummary().catch(() => ({ data: null })),
+        empApi.getMyProfile().catch(() => ({ data: null })),
+        empApi.getMySummary().catch(() => ({ data: null })),
       ]);
       setProfile(profRes.data);
       setSummary(sumRes.data);

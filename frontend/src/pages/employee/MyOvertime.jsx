@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminApi } from '../../lib/api';
+import { empApi } from '../../lib/api';
 import { Timer, Loader } from 'lucide-react';
 
 export default function MyOvertime() {
@@ -9,14 +9,14 @@ export default function MyOvertime() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('ax_token');
+    const token = localStorage.getItem('ax_emp_token');
     if (!token) { navigate('/employee/login'); return; }
     load();
   }, []);
 
   const load = async () => {
     try {
-      const res = await adminApi.getMyOvertime(50).catch(() => ({ data: { records: [] } }));
+      const res = await empApi.getMyOvertime(50).catch(() => ({ data: { records: [] } }));
       setRecords(Array.isArray(res.data) ? res.data : (res.data?.records || []));
     } catch (e) {
       console.error(e);

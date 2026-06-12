@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminApi } from '../../lib/api';
+import { empApi } from '../../lib/api';
 import { CalendarDays, CheckCircle2, XCircle, Loader, Plus } from 'lucide-react';
 
 export default function MyLeaves() {
@@ -15,7 +15,7 @@ export default function MyLeaves() {
   const [submitSuccess, setSubmitSuccess] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('ax_token');
+    const token = localStorage.getItem('ax_emp_token');
     if (!token) { navigate('/employee/login'); return; }
     load();
   }, []);
@@ -23,8 +23,8 @@ export default function MyLeaves() {
   const load = async () => {
     try {
       const [leavesRes, balRes] = await Promise.all([
-        adminApi.getMyLeaves(50).catch(() => ({ data: { leaves: [] } })),
-        adminApi.getMyLeaveBalance().catch(() => ({ data: null })),
+        empApi.getMyLeaves(50).catch(() => ({ data: { leaves: [] } })),
+        empApi.getMyLeaveBalance().catch(() => ({ data: null })),
       ]);
       setLeaves(Array.isArray(leavesRes.data) ? leavesRes.data : (leavesRes.data?.leaves || []));
       setBalance(balRes.data);
@@ -40,7 +40,7 @@ export default function MyLeaves() {
     setSubmitError('');
     setSubmitting(true);
     try {
-      await adminApi.applyLeave({
+      await empApi.applyLeave({
         date: applyForm.date,
         days: parseFloat(applyForm.days),
         reason: applyForm.reason,

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminApi } from '../../lib/api';
+import { empApi } from '../../lib/api';
 import { KanbanSquare, Loader, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 
 export default function MyTasks() {
@@ -10,16 +10,16 @@ export default function MyTasks() {
   const [filter, setFilter] = useState('all'); // all | todo | in_progress | done
 
   useEffect(() => {
-    const token = localStorage.getItem('ax_token');
+    const token = localStorage.getItem('ax_emp_token');
     if (!token) { navigate('/employee/login'); return; }
     load();
   }, []);
 
   const load = async () => {
     try {
-      const res = await adminApi.listTasks().catch(() => ({ data: { tasks: [] } }));
+      const res = await empApi.listTasks().catch(() => ({ data: { tasks: [] } }));
 const allTasks = res.data?.tasks || [];
-      const uid = JSON.parse(localStorage.getItem('ax_user') || '{}').id;
+      const uid = JSON.parse(localStorage.getItem('ax_emp_user') || '{}').id;
       const myTasks = allTasks.filter((t) => t.assignee === uid);
       setTasks(myTasks);
     } catch (e) {
@@ -121,7 +121,7 @@ const allTasks = res.data?.tasks || [];
                   <button
                     onClick={async () => {
                       const next = task.status === 'todo' ? 'in_progress' : 'done';
-                      await adminApi.updateMyTaskStatus(task.id, next).catch(() => {});
+                      await empApi.updateMyTaskStatus(task.id, next).catch(() => {});
                       load();
                     }}
                     className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-[#1E1E2E] text-xs text-[#A0A0B0] hover:text-white hover:bg-[#2A2A3A] transition-colors"

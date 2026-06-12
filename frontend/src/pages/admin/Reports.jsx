@@ -36,9 +36,11 @@ const Reports = () => {
   const chartData = summary?.employees?.map((e) => ({
     name: e.employeeName?.split(' ')[0] || e.employeeName,
     hours: e.completedHours,
-    target: 208,
+    target: e.targetHours,
     overtime: e.overtimeHours,
   })) || [];
+
+  const targetHours = summary?.employees?.[0]?.targetHours || 208;
 
   const pieData = attendanceRates ? [
     { name: 'Met Target', value: attendanceRates.metCount, color: '#10B981' },
@@ -82,7 +84,7 @@ const Reports = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Hours bar chart */}
           <div className="bg-[#12121A] border border-white/10 rounded-[16px] p-5">
-            <h3 className="text-white font-bold mb-4">Hours vs Target (208h)</h3>
+            <h3 className="text-white font-bold mb-4">Hours vs Target ({targetHours}h)</h3>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />

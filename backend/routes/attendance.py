@@ -8,6 +8,16 @@ from models.schemas import AttendanceVerifyInput, AttendanceCorrectInput
 from services.db import db
 from services.auth_service import require_admin, require_super_admin, require_employee
 
+DEFAULT_TARGET_HOURS = 208
+
+
+async def _get_target_hours() -> float:
+    """Fetch the configured monthly target hours from settings."""
+    s = await db.settings.find_one({"id": "global"})
+    if s and s.get("monthlyTargetHours"):
+        return float(s["monthlyTargetHours"])
+    return float(DEFAULT_TARGET_HOURS)
+
 router = APIRouter(prefix="/attendance", tags=["attendance"])
 
 
@@ -142,12 +152,13 @@ async def my_summary(user: dict = Depends(require_employee)):
     # Leave balance
     from routes.leaves import _leave_balance
     leave_bal = await _leave_balance(user_id)
+    target_hours = await _get_target_hours()
 
     return {
         "currentMonth": month_str,
         "completedHours": round(total_hours, 2),
-        "targetHours": 208,
-        "remainingHours": round(max(0, 208 - total_hours), 2),
+        "targetHours": target_hours,
+        "remainingHours": round(max(0, target_hours - total_hours), 2),
         "overtimeHours": round(total_ot, 2),
         "leave_balance": leave_bal.get("remaining", 4),
         "leaves_used": leave_bal.get("used", 0),
@@ -317,6 +328,6 @@ async def monthly_summary(
         "employeeId": employee_id,
         "month": month_str,
         "totalHours": round(total_hours, 2),
-        "targetHours": 208,
-        "remaining": round(max(0, 208 - total_hours), 2),
+        "targetHours": await _get_target_hours(),
+        "remaining": round(max(0, await _get_target_hours() - total_hours), 2),
     }

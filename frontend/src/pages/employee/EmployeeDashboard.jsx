@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminApi } from '../../lib/api';
-import { useAuth } from '../../lib/hooks';
+import { empApi } from '../../lib/api';
+import { useEmployeeAuth } from '../../lib/hooks';
 import { Clock, CalendarDays, KanbanSquare, Timer, TrendingUp, CheckCircle2, XCircle, Loader } from 'lucide-react';
 
 function StatCard({ label, value, sub, icon: Icon, color }) {
@@ -20,7 +20,7 @@ function StatCard({ label, value, sub, icon: Icon, color }) {
 }
 
 export default function EmployeeDashboard() {
-  const { user } = useAuth();
+  const { user } = useEmployeeAuth();
   const navigate = useNavigate();
   const [summary, setSummary] = useState(null);
   const [recentLeaves, setRecentLeaves] = useState([]);
@@ -32,7 +32,7 @@ export default function EmployeeDashboard() {
   const [clockError, setClockError] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('ax_token');
+    const token = localStorage.getItem('ax_emp_token');
     if (!token) { navigate('/employee/login'); return; }
     load();
   }, []);
@@ -40,11 +40,11 @@ export default function EmployeeDashboard() {
   const load = async () => {
     try {
       const [sumRes, leavesRes, balRes, tasksRes, attRes] = await Promise.all([
-        adminApi.getMySummary().catch(() => ({ data: null })),
-        adminApi.getMyLeaves(5).catch(() => ({ data: [] })),
-        adminApi.getMyLeaveBalance().catch(() => ({ data: { remaining: 4 } })),
-        adminApi.listTasks().catch(() => ({ data: { tasks: [] } })),
-        adminApi.getMyAttendance(30).catch(() => ({ data: [] })),
+        empApi.getMySummary().catch(() => ({ data: null })),
+        empApi.getMyLeaves(5).catch(() => ({ data: [] })),
+        empApi.getMyLeaveBalance().catch(() => ({ data: { remaining: 4 } })),
+        empApi.listTasks().catch(() => ({ data: { tasks: [] } })),
+        empApi.getMyAttendance(30).catch(() => ({ data: [] })),
       ]);
       setSummary(sumRes.data);
       setRecentLeaves(Array.isArray(leavesRes.data) ? leavesRes.data : (leavesRes.data?.leaves || []));
@@ -71,9 +71,9 @@ export default function EmployeeDashboard() {
     setClocking(true);
     try {
       if (clockStatus?.status === 'in') {
-        await adminApi.clockOut();
+        await empApi.clockOut();
       } else {
-        await adminApi.clockIn();
+        await empApi.clockIn();
       }
       await load();
     } catch (err) {

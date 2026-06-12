@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell } from 'lucide-react';
-import { adminApi } from '../lib/api';
+import { adminApi, empApi } from '../lib/api';
 
 const NOTIF_COLORS = {
   leave_applied: 'bg-[#6366F1]/15 text-[#6366F1]',
@@ -20,7 +20,8 @@ const NOTIF_LABELS = {
   correction_requested: 'Correction Requested',
 };
 
-const NotificationBell = () => {
+const NotificationBell = ({ useEmployeeToken = false }) => {
+  const api = useEmployeeToken ? empApi : adminApi;
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -37,7 +38,7 @@ const NotificationBell = () => {
   const fetchNotifications = async () => {
     setLoading(true);
     try {
-      const res = await adminApi.getNotifications();
+      const res = await api.getNotifications();
       setNotifications(res.data?.slice(0, 10) || []);
     } catch (e) {
       // silently fail — notifications are non-critical
@@ -48,7 +49,7 @@ const NotificationBell = () => {
 
   const markAllRead = async () => {
     try {
-      await adminApi.markNotificationsRead();
+      await api.markNotificationsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch (e) {}
   };

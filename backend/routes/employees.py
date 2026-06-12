@@ -16,10 +16,18 @@ from services.auth_service import (
 
 router = APIRouter(prefix="/employees", tags=["employees"])
 
-TARGET_HOURS = 208
+DEFAULT_TARGET_HOURS = 208
 WORKING_DAYS_PER_MONTH = 26
 HOURS_PER_DAY = 8
 LEAVES_PER_MONTH = 4
+
+
+async def _get_target_hours() -> float:
+    """Fetch the configured monthly target hours from settings."""
+    s = await db.settings.find_one({"id": "global"})
+    if s and s.get("monthlyTargetHours"):
+        return float(s["monthlyTargetHours"])
+    return float(DEFAULT_TARGET_HOURS)
 
 
 def _public_fields(user: dict) -> dict:
@@ -66,7 +74,7 @@ def _employee_month_target(user_id: str) -> float:
     # Fallback: use the user's createdAt if available from a separate lookup
     # Since Motor is async, we'll compute based on the createdAt stored in user doc
     # We'll pass it from the caller
-    return float(TARGET_HOURS)
+    return float(DEFAULT_TARGET_HOURS)
 
 
 async def _get_employee_stats(user_id: str) -> dict:
@@ -116,12 +124,8 @@ async def _get_employee_stats(user_id: str) -> dict:
     else:
         created_at = now
 
-    # If joined this month, prorate target
-    if created_at.year == year and created_at.month == month:
-        remaining_days = _remaining_working_days(year, month, created_at)
-        month_target = float(remaining_days * HOURS_PER_DAY)
-    else:
-        month_target = float(TARGET_HOURS)
+    # Always use the configured monthly target (no prorating)
+    month_target = await _get_target_hours()
 
     return {
         "targetHours": month_target,

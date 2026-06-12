@@ -48,6 +48,24 @@ export function clearAuth() {
   localStorage.removeItem('ax_user');
 }
 
+export function useEmployeeAuth() {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('ax_emp_token') : null;
+  const userJson = typeof window !== 'undefined' ? localStorage.getItem('ax_emp_user') : null;
+  let user = null;
+  try { user = userJson ? JSON.parse(userJson) : null; } catch (e) { user = null; }
+  return { token, user, isAuthed: Boolean(token) };
+}
+
+export function setEmployeeAuth(token, user) {
+  localStorage.setItem('ax_emp_token', token);
+  localStorage.setItem('ax_emp_user', JSON.stringify(user));
+}
+
+export function clearEmployeeAuth() {
+  localStorage.removeItem('ax_emp_token');
+  localStorage.removeItem('ax_emp_user');
+}
+
 export function getSessionId() {
   let id = localStorage.getItem('ax_session');
   if (!id) {
