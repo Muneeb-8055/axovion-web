@@ -93,7 +93,7 @@ async def init_db():
             "id": str(_uuid.uuid4()),
             "email": admin_email,
             "name": "Axovion Admin",
-            "role": "admin",
+            "role": "super_admin",
             "passwordHash": hash_password(admin_password),
             "createdAt": datetime.now(timezone.utc).isoformat(),
         })
