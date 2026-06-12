@@ -82,13 +82,13 @@ async def init_db():
     await db.notifications.create_index("id", unique=True)
     await db.notifications.create_index("employeeId")
     await db.notifications.create_index([("read", 1), ("createdAt", -1)])
-    # Seed default admin user (idempotent)
+    # Seed default super admin user (idempotent)
     from services.auth_service import hash_password
+    import uuid as _uuid
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@axovion.io")
     admin_password = os.environ.get("ADMIN_PASSWORD", "AxovionAdmin2025!")
     existing = await db.users.find_one({"email": admin_email})
     if not existing:
-        import uuid as _uuid
         await db.users.insert_one({
             "id": str(_uuid.uuid4()),
             "email": admin_email,
@@ -97,6 +97,12 @@ async def init_db():
             "passwordHash": hash_password(admin_password),
             "createdAt": datetime.now(timezone.utc).isoformat(),
         })
+    elif existing.get("role") != "super_admin":
+        # Upgrade existing admin to super_admin on every deploy
+        await db.users.update_one(
+            {"email": admin_email},
+            {"$set": {"role": "super_admin"}}
+        )
     # Seed settings
     existing_settings = await db.settings.find_one({"id": "global"})
     if not existing_settings:
