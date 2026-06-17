@@ -22,6 +22,13 @@ export const empApi = axios.create({
   timeout: 60000,
 });
 
+// Separate instance for customer portal (uses its own token key)
+export const custApi = axios.create({
+  baseURL: API,
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 60000,
+});
+
 // Attach admin auth token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('ax_token');
@@ -52,7 +59,30 @@ empApi.getMyLeaveBalance = () => empApi.get('/leaves/balance/my');
 empApi.applyLeave = (data) => empApi.post('/leaves', data);
 empApi.getMyOvertime = (limit) => empApi.get('/overtime/my', { params: { limit } });
 empApi.listTasks = () => empApi.get('/tasks');
+empApi.listMyTasks = () => empApi.get('/tasks/my');
 empApi.updateMyTaskStatus = (id, status) => empApi.patch(`/tasks/${id}/status?status=${status}`);
+empApi.submitTaskFeedback = (id, data) => empApi.post(`/tasks/${id}/feedback`, data);
+
+// Attach customer auth token
+custApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem('ax_cust_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Customer portal API methods
+custApi.signup = (data) => custApi.post('/customer/signup', data);
+custApi.login = (data) => custApi.post('/customer/login', data);
+custApi.me = () => custApi.get('/customer/me');
+custApi.updateProfile = (data) => custApi.put('/customer/me', data);
+custApi.changePassword = (data) => custApi.put('/customer/me/password', data);
+custApi.dashboard = () => custApi.get('/customer/dashboard');
+custApi.auditEligibility = () => custApi.get('/customer/audit/eligibility');
+custApi.submitAudit = (data) => custApi.post('/customer/audit', data);
+custApi.getAudit = (id) => custApi.get(`/customer/audit/${id}`);
+custApi.createBooking = (data) => custApi.post('/customer/booking', data);
 empApi.getMyProfile = () => empApi.get('/employees/me');
 empApi.getNotifications = () => empApi.get('/notifications');
 empApi.markNotificationsRead = () => empApi.put('/notifications/mark-read');
@@ -92,6 +122,7 @@ export const adminApi = {
   createTask: (data) => api.post('/tasks', data),
   updateTask: (id, data) => api.put(`/tasks/${id}`, data),
   updateMyTaskStatus: (id, status) => api.patch(`/tasks/${id}/status?status=${status}`),
+  resolveTaskIssue: (id) => api.put(`/tasks/${id}/resolve-issue`),
   deleteTask: (id) => api.delete(`/tasks/${id}`),
   // emails
   listEmails: () => api.get('/emails'),
@@ -162,4 +193,9 @@ export const adminApi = {
   // === Notifications ===
   getNotifications: () => api.get('/notifications'),
   markNotificationsRead: () => api.put('/notifications/mark-read'),
+
+  // === Recycle Bin ===
+  getRecycleBin: (collection) => api.get('/recycle-bin', { params: collection ? { collection } : {} }),
+  restoreRecycleItem: (id) => api.post(`/recycle-bin/${id}/restore`),
+  purgeRecycleItem: (id) => api.delete(`/recycle-bin/${id}`),
 };

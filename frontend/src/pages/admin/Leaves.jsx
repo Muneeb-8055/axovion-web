@@ -16,7 +16,7 @@ const Leaves = () => {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('');
   const [applying, setApplying] = useState(false);
-  const [draft, setDraft] = useState({ date: '', type: 'full' });
+  const [draft, setDraft] = useState({ date: '', type: 'full', reason: '' });
 
   const load = async () => {
     setLoading(true);
@@ -42,11 +42,12 @@ const Leaves = () => {
 
   const apply = async () => {
     if (!draft.date) { toast.error('Date is required'); return; }
+    if (!draft.reason.trim()) { toast.error('Reason is required'); return; }
     try {
       await adminApi.applyLeave(draft);
       toast.success('Leave applied');
       setApplying(false);
-      setDraft({ date: '', type: 'full' });
+      setDraft({ date: '', type: 'full', reason: '' });
       load();
     } catch (e) { toast.error(e.response?.data?.detail || 'Failed to apply'); }
   };
@@ -107,6 +108,10 @@ const Leaves = () => {
                     </div>
                   </div>
                   {balance && <p className="text-[#C0C0C8]/55 text-xs">Balance: {balance.remaining} / 4 remaining this month</p>}
+                  <div>
+                    <label className="text-[#C0C0C8]/65 text-xs mb-1 block">Reason</label>
+                    <textarea value={draft.reason} onChange={(e) => setDraft({ ...draft, reason: e.target.value })} rows="3" placeholder="Why do you need this leave?" className="w-full bg-[#0A0A0F] border border-white/10 rounded-[10px] px-3 py-2 text-sm text-white placeholder:text-[#C0C0C8]/40 resize-none" />
+                  </div>
                   <button onClick={apply} className="w-full bg-[#F97316] text-[#0A0A0F] rounded-[10px] px-4 py-2.5 text-sm font-bold hover:bg-[#FBBF24]">Apply</button>
                 </div>
               </DialogContent>
@@ -177,6 +182,7 @@ const Leaves = () => {
                   <th className="text-left text-[#C0C0C8]/55 text-xs px-4 py-3 font-semibold">Employee</th>
                   <th className="text-left text-[#C0C0C8]/55 text-xs px-4 py-3 font-semibold">Date</th>
                   <th className="text-left text-[#C0C0C8]/55 text-xs px-4 py-3 font-semibold">Type</th>
+                  <th className="text-left text-[#C0C0C8]/55 text-xs px-4 py-3 font-semibold">Reason</th>
                   <th className="text-left text-[#C0C0C8]/55 text-xs px-4 py-3 font-semibold">Status</th>
                   <th className="text-right text-[#C0C0C8]/55 text-xs px-4 py-3 font-semibold">Action</th>
                 </tr>
@@ -187,6 +193,12 @@ const Leaves = () => {
                     <td className="px-4 py-3 text-white text-sm font-semibold">{l.employeeName}</td>
                     <td className="px-4 py-3 text-[#C0C0C8] text-sm">{l.date}</td>
                     <td className="px-4 py-3 text-[#C0C0C8] text-sm capitalize">{l.type} day</td>
+                    <td className="px-4 py-3 text-[#C0C0C8]/80 text-sm max-w-[220px]">
+                      <span title={l.reason}>{l.reason || '—'}</span>
+                      {l.status === 'rejected' && l.rejectionReason && (
+                        <span className="block text-[#EF4444] text-[10px] mt-0.5">Rejected: {l.rejectionReason}</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${STATUS_COLOR[l.status] || ''}`}>{l.status}</span>
                     </td>

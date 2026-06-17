@@ -242,10 +242,14 @@ async def update_employee(
 
 @router.delete("/{emp_id}")
 async def delete_employee(emp_id: str, user: dict = Depends(require_super_admin)):
-    """Super Admin deletes an employee account."""
-    result = await db.users.delete_one({"id": emp_id, "role": {"$ne": "super_admin"}})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Employee not found or cannot delete super admin")
+    """Super Admin: move an employee account to the recycle bin (soft delete)."""
+    target = await db.users.find_one({"id": emp_id})
+    if not target:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    if target.get("role") == "super_admin":
+        raise HTTPException(status_code=400, detail="Cannot delete a super admin")
+    from services.recycle_bin import soft_delete
+    await soft_delete("users", emp_id, deleted_by=user.get("sub"))
     return {"message": "Employee deleted"}
 
 

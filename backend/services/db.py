@@ -82,6 +82,10 @@ async def init_db():
     await db.notifications.create_index("id", unique=True)
     await db.notifications.create_index("employeeId")
     await db.notifications.create_index([("read", 1), ("createdAt", -1)])
+    # Customer portal indexes
+    await db.customers.create_index("id", unique=True)
+    await db.customers.create_index("email", unique=True)
+    await db.audits.create_index("contactEmail")
     # Seed default super admin user (idempotent)
     from services.auth_service import hash_password
     import uuid as _uuid

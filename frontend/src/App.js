@@ -27,6 +27,7 @@ import AdminEmails from './pages/admin/Emails';
 import AdminCalls from './pages/admin/Calls';
 import AdminSettings from './pages/admin/Settings';
 import EmployeeManager from './pages/admin/EmployeeManager';
+import RecycleBin from './pages/admin/RecycleBin';
 
 import EmployeeLogin from './pages/employee/EmployeeLogin';
 import { EmployeeLayout } from './pages/employee/EmployeeLayout';
@@ -40,6 +41,13 @@ import Attendance from './pages/admin/Attendance';
 import Leaves from './pages/admin/Leaves';
 import Overtime from './pages/admin/Overtime';
 import Reports from './pages/admin/Reports';
+
+import CustomerAuth from './pages/customer/CustomerAuth';
+import CustomerLayout from './pages/customer/CustomerLayout';
+import CustomerDashboard from './pages/customer/CustomerDashboard';
+import CustomerAudit from './pages/customer/CustomerAudit';
+import CustomerBookings from './pages/customer/CustomerBookings';
+import CustomerAccount from './pages/customer/CustomerAccount';
 
 const WithPublic = ({ children }) => <PublicLayout>{children}</PublicLayout>;
 
@@ -76,6 +84,7 @@ function App() {
             <Route path="emails" element={<AdminEmails />} />
             <Route path="calls" element={<AdminCalls />} />
             <Route path="settings" element={<AdminSettings />} />
+            <Route path="recycle-bin" element={<RecycleBin />} />
           </Route>
 
           {/* Employee */}
@@ -87,6 +96,16 @@ function App() {
             <Route path="leaves" element={<MyLeaves />} />
             <Route path="overtime" element={<MyOvertime />} />
             <Route path="profile" element={<Profile />} />
+          </Route>
+
+          {/* Customer Portal */}
+          <Route path="/login" element={<CustomerAuth mode="login" />} />
+          <Route path="/signup" element={<CustomerAuth mode="signup" />} />
+          <Route path="/dashboard" element={<CustomerLayout />}>
+            <Route index element={<CustomerDashboard />} />
+            <Route path="audit" element={<CustomerAudit />} />
+            <Route path="bookings" element={<CustomerBookings />} />
+            <Route path="account" element={<CustomerAccount />} />
           </Route>
 
           {/* 404 -> Home */}

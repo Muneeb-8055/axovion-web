@@ -66,6 +66,24 @@ export function clearEmployeeAuth() {
   localStorage.removeItem('ax_emp_user');
 }
 
+export function useCustomerAuth() {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('ax_cust_token') : null;
+  const userJson = typeof window !== 'undefined' ? localStorage.getItem('ax_cust_user') : null;
+  let user = null;
+  try { user = userJson ? JSON.parse(userJson) : null; } catch (e) { user = null; }
+  return { token, user, isAuthed: Boolean(token) };
+}
+
+export function setCustomerAuth(token, user) {
+  localStorage.setItem('ax_cust_token', token);
+  localStorage.setItem('ax_cust_user', JSON.stringify(user));
+}
+
+export function clearCustomerAuth() {
+  localStorage.removeItem('ax_cust_token');
+  localStorage.removeItem('ax_cust_user');
+}
+
 export function getSessionId() {
   let id = localStorage.getItem('ax_session');
   if (!id) {

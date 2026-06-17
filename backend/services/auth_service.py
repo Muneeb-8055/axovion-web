@@ -68,6 +68,17 @@ async def require_employee(authorization: Optional[str] = Header(None)) -> dict:
     return payload
 
 
+async def require_customer(authorization: Optional[str] = Header(None)) -> dict:
+    """Auth guard for the customer portal. Customers are fully isolated from staff."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing bearer token")
+    token = authorization.replace("Bearer ", "", 1).strip()
+    payload = decode_token(token)
+    if payload.get("role") != "customer":
+        raise HTTPException(status_code=403, detail="Customer access required")
+    return payload
+
+
 def check_permission(user_payload: dict, permission: str) -> bool:
     """Check if an admin has a specific permission enabled."""
     if user_payload.get("role") == "super_admin":

@@ -214,6 +214,25 @@ class LoginInput(BaseModel):
     password: str
 
 
+class CustomerSignupInput(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+    company: Optional[str] = None
+    phone: Optional[str] = None
+
+
+class CustomerProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    company: Optional[str] = None
+    phone: Optional[str] = None
+
+
+class PasswordChangeInput(BaseModel):
+    currentPassword: str
+    newPassword: str
+
+
 class AdminPermissions(BaseModel):
     """Granular permissions for Admin role — all default False."""
     create_employee: bool = False
@@ -310,6 +329,7 @@ class AttendanceCorrectInput(BaseModel):
 class LeaveApplyInput(BaseModel):
     date: str  # YYYY-MM-DD
     type: Literal["half", "full"] = "full"
+    reason: str
 
 
 class LeaveDecisionInput(BaseModel):

@@ -38,12 +38,13 @@ export default function MyLeaves() {
   const submitApply = async (e) => {
     e.preventDefault();
     setSubmitError('');
+    if (!applyForm.reason.trim()) { setSubmitError('A reason is required.'); return; }
     setSubmitting(true);
     try {
       await empApi.applyLeave({
         date: applyForm.date,
-        days: parseFloat(applyForm.days),
-        reason: applyForm.reason,
+        type: applyForm.days === '0.5' ? 'half' : 'full',
+        reason: applyForm.reason.trim(),
       });
       setSubmitSuccess('Leave application submitted!');
       setShowApply(false);
@@ -147,7 +148,12 @@ export default function MyLeaves() {
                     <td className="py-3 text-[#A0A0B0]">
                       {leave.type === 'half' ? 'Half-day' : 'Full day'}
                     </td>
-                    <td className="py-3 text-[#A0A0B0]">{leave.type}</td>
+                    <td className="py-3 text-[#A0A0B0] max-w-[200px]">
+                      <span title={leave.reason}>{leave.reason || '—'}</span>
+                      {leave.status === 'rejected' && leave.rejectionReason && (
+                        <span className="block text-red-400 text-[10px] mt-0.5">Rejected: {leave.rejectionReason}</span>
+                      )}
+                    </td>
                     <td className="py-3">
                       <span className={`text-xs px-2 py-1 rounded-full ${
                         leave.status === 'approved' ? 'bg-green-500/10 text-green-400' :
@@ -213,14 +219,18 @@ export default function MyLeaves() {
               </div>
 
               <div>
-                <label className="block text-sm text-[#A0A0B0] mb-1.5">Reason (optional)</label>
+                <label className="block text-sm text-[#A0A0B0] mb-1.5">Reason</label>
                 <textarea
                   value={applyForm.reason}
                   onChange={(e) => setApplyForm({ ...applyForm, reason: e.target.value })}
-                  placeholder="Brief reason for leave..."
+                  placeholder="Why do you need this leave?"
                   rows={2}
+                  required
                   className="w-full bg-[#12121A] border border-[#2A2A3A] rounded-lg px-4 py-3 text-white text-sm placeholder-[#4A4A5A] focus:outline-none focus:border-[#6366F1] resize-none"
                 />
+                <p className="text-[10px] text-[#606070] mt-1.5">
+                  Approved leave deducts normally. If rejected, it counts double against your monthly balance.
+                </p>
               </div>
 
               <div className="flex gap-3">

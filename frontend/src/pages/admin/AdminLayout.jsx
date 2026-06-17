@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth, clearAuth } from '../../lib/hooks';
 import { LOGO_URL } from '../../lib/content';
-import { LayoutDashboard, ClipboardList, MessageSquare, CalendarCheck, KanbanSquare, BarChart3, Mail, Phone, Settings, LogOut, Search, Users, Clock, CalendarDays, Timer, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, MessageSquare, CalendarCheck, KanbanSquare, BarChart3, Mail, Phone, Settings, LogOut, Search, Users, Clock, CalendarDays, Timer, TrendingUp, Archive } from 'lucide-react';
 import NotificationBell from '../../components/NotificationBell';
 
 const NAV = [
@@ -20,6 +20,7 @@ const NAV = [
   { to: '/admin/emails', label: 'Emails', icon: Mail },
   { to: '/admin/calls', label: 'Calls', icon: Phone },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
+  { to: '/admin/recycle-bin', label: 'Recycle Bin', icon: Archive },
 ];
 
 const AdminLayout = () => {

@@ -26,6 +26,8 @@ from routes.leaves import router as leaves_router  # noqa: E402
 from routes.overtime import router as overtime_router  # noqa: E402
 from routes.reports import router as reports_router  # noqa: E402
 from routes.notifications import router as notifications_router  # noqa: E402
+from routes.recycle_bin import router as recycle_bin_router  # noqa: E402
+from routes.customers import router as customers_router  # noqa: E402
 
 app = FastAPI(title="Axovion.io API", version="1.0.0")
 
@@ -59,6 +61,8 @@ api_router.include_router(leaves_router)
 api_router.include_router(overtime_router)
 api_router.include_router(reports_router)
 api_router.include_router(notifications_router)
+api_router.include_router(recycle_bin_router)
+api_router.include_router(customers_router)
 
 # Mount main router
 app.include_router(api_router)

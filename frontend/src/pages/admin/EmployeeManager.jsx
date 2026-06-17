@@ -3,7 +3,7 @@ import { adminApi } from '../../lib/api';
 import { useAuth } from '../../lib/hooks';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
-import { Plus, Search, RefreshCw, UserX, UserCheck, Settings, Eye } from 'lucide-react';
+import { Plus, Search, RefreshCw, UserX, UserCheck, Settings, Eye, Trash2 } from 'lucide-react';
 import EmployeeCard from '../../components/EmployeeCard';
 
 const EmployeeManager = () => {
@@ -55,6 +55,15 @@ const EmployeeManager = () => {
       }
       load();
     } catch (e) { toast.error('Action failed'); }
+  };
+
+  const removeEmployee = async (emp) => {
+    if (!window.confirm(`Move ${emp.name}'s account to the recycle bin? You can restore it later.`)) return;
+    try {
+      await adminApi.deleteEmployee(emp.id);
+      toast.success('Employee moved to recycle bin');
+      load();
+    } catch (e) { toast.error(e.response?.data?.detail || 'Delete failed'); }
   };
 
   const viewProfile = async (emp) => {
@@ -176,6 +185,11 @@ const EmployeeManager = () => {
                 <button onClick={() => toggleActive(emp)} className="h-7 w-7 bg-[#0A0A0F]/90 border border-white/10 rounded-lg flex items-center justify-center hover:text-[#EF4444]" title={emp.isActive ? 'Deactivate' : 'Reactivate'}>
                   {emp.isActive ? <UserX className="h-3 w-3" /> : <UserCheck className="h-3 w-3" />}
                 </button>
+                {isSuperAdmin && (
+                  <button onClick={() => removeEmployee(emp)} className="h-7 w-7 bg-[#0A0A0F]/90 border border-white/10 rounded-lg flex items-center justify-center text-[#C0C0C8] hover:text-[#EF4444]" title="Delete (recycle bin)">
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                )}
               </div>
               {!emp.isActive && (
                 <div className="absolute inset-0 bg-[#0A0A0F]/60 rounded-[16px] flex items-center justify-center pointer-events-none">

@@ -13,16 +13,27 @@ LEAVES_PER_MONTH = 4
 
 
 async def _leave_balance(employee_id: str) -> dict:
+    """Compute leave usage for the current month.
+
+    Deduction rules:
+      - approved leave: 1x (full) / 0.5x (half)
+      - rejected leave: 2x (full) / 1x (half)  -> counts double as penalty
+      - pending leave: not deducted yet
+    """
     now = datetime.now(timezone.utc)
     month_str = f"{now.year}-{now.month:02d}"
     leaves_cursor = db.leaves.find({
         "employeeId": employee_id,
         "date": {"$regex": f"^{month_str}"},
-        "status": "approved"
+        "status": {"$in": ["approved", "rejected"]},
     })
     used = 0.0
     async for l in leaves_cursor:
-        used += 0.5 if l.get("type") == "half" else 1.0
+        base = 0.5 if l.get("type") == "half" else 1.0
+        if l.get("status") == "rejected":
+            used += base * 2  # rejected leaves are penalised double
+        else:
+            used += base
     return {"used": round(used, 1), "remaining": round(max(0, LEAVES_PER_MONTH - used), 1)}
 
 
@@ -33,10 +44,13 @@ async def apply_leave(
     payload: LeaveApplyInput,
     user: dict = Depends(require_employee)
 ):
-    """Employee applies for leave (half or full day)."""
+    """Employee applies for leave (half or full day) with a reason."""
     now = datetime.now(timezone.utc)
-    balance = await _leave_balance(user["sub"])
 
+    if not payload.reason or not payload.reason.strip():
+        raise HTTPException(status_code=400, detail="A reason is required to apply for leave")
+
+    balance = await _leave_balance(user["sub"])
     deduct = 0.5 if payload.type == "half" else 1
     if balance["remaining"] < deduct:
         raise HTTPException(
@@ -50,6 +64,7 @@ async def apply_leave(
         "employeeId": user["sub"],
         "date": payload.date,
         "type": payload.type,
+        "reason": payload.reason.strip(),
         "status": "pending",
         "appliedAt": now.isoformat(),
         "approvedAt": None,
@@ -85,6 +100,7 @@ async def my_leaves(
             "id": l.get("id"),
             "date": l.get("date"),
             "type": l.get("type"),
+            "reason": l.get("reason"),
             "status": l.get("status"),
             "appliedAt": l.get("appliedAt"),
             "approvedAt": l.get("approvedAt"),
@@ -125,6 +141,7 @@ async def list_leaves(
             "employeeName": emp.get("name", "Unknown") if emp else "Unknown",
             "date": l.get("date"),
             "type": l.get("type"),
+            "reason": l.get("reason"),
             "status": l.get("status"),
             "appliedAt": l.get("appliedAt"),
             "approvedAt": l.get("approvedAt"),

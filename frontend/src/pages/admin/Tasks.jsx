@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { adminApi } from '../../lib/api';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
-import { Plus, Trash2, RefreshCw, Users } from 'lucide-react';
+import { Plus, Trash2, RefreshCw, Users, Pencil, AlertTriangle } from 'lucide-react';
 import EmployeeCard from '../../components/EmployeeCard';
 
 const COLS = [
@@ -25,6 +25,9 @@ const AdminTasks = () => {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState({ title: '', description: '', priority: 'medium', status: 'todo', assignee: '' });
+  const [editing, setEditing] = useState(null);
+  const [editDraft, setEditDraft] = useState({ title: '', description: '', priority: 'medium', status: 'todo', assignee: '' });
+  const [viewingIssue, setViewingIssue] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -79,9 +82,35 @@ const AdminTasks = () => {
   };
 
   const remove = async (id) => {
-    if (!window.confirm('Delete this task?')) return;
-    try { await adminApi.deleteTask(id); toast.success('Deleted'); load(); }
+    if (!window.confirm('Move this task to the recycle bin?')) return;
+    try { await adminApi.deleteTask(id); toast.success('Moved to recycle bin'); load(); }
     catch (e) { toast.error('Delete failed'); }
+  };
+
+  const openEdit = (task) => {
+    setEditing(task);
+    setEditDraft({
+      title: task.title || '',
+      description: task.description || '',
+      priority: task.priority || 'medium',
+      status: task.status || 'todo',
+      assignee: task.assignee || '',
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editDraft.title) { toast.error('Title required'); return; }
+    try {
+      await adminApi.updateTask(editing.id, editDraft);
+      toast.success('Task updated');
+      setEditing(null);
+      load();
+    } catch (e) { toast.error('Update failed'); }
+  };
+
+  const resolveIssue = async (id) => {
+    try { await adminApi.resolveTaskIssue(id); toast.success('Issue marked resolved'); setViewingIssue(null); load(); }
+    catch (e) { toast.error('Failed to resolve'); }
   };
 
   return (
@@ -142,14 +171,23 @@ const AdminTasks = () => {
                   <div className="space-y-3 min-h-[120px]">
                     {colTasks.map((t) => {
                       const assignee = employees.find((e) => e.id === t.assignee);
+                      const feedbackCount = (t.feedback || []).length;
                       return (
-                        <div key={t.id} className="rounded-[12px] bg-[#0A0A0F] border border-white/10 p-3 hover:border-[#00D4FF]/25" data-testid={`task-card-${t.id}`}>
+                        <div key={t.id} className={`rounded-[12px] bg-[#0A0A0F] border p-3 hover:border-[#00D4FF]/25 ${t.hasIssue ? 'border-[#EF4444]/40' : 'border-white/10'}`} data-testid={`task-card-${t.id}`}>
                           <div className="flex items-start justify-between gap-2">
                             <h4 className="text-white font-semibold text-sm leading-snug flex-1">{t.title}</h4>
-                            <button onClick={() => remove(t.id)} className="text-[#C0C0C8] hover:text-[#EF4444] shrink-0"><Trash2 className="h-3 w-3" /></button>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button onClick={() => openEdit(t)} className="text-[#C0C0C8] hover:text-[#00D4FF]" title="Edit task"><Pencil className="h-3 w-3" /></button>
+                              <button onClick={() => remove(t.id)} className="text-[#C0C0C8] hover:text-[#EF4444]" title="Delete task"><Trash2 className="h-3 w-3" /></button>
+                            </div>
                           </div>
                           {t.description && <p className="text-[#C0C0C8]/65 text-xs mt-1">{t.description}</p>}
                           {assignee && <p className="text-[#00D4FF]/75 text-[10px] mt-1.5">{assignee.name}</p>}
+                          {t.hasIssue && (
+                            <button onClick={() => setViewingIssue(t)} className="mt-2 w-full flex items-center gap-1.5 text-[10px] font-bold text-[#EF4444] bg-[#EF4444]/10 border border-[#EF4444]/25 rounded-lg px-2 py-1 hover:bg-[#EF4444]/20">
+                              <AlertTriangle className="h-3 w-3" /> Issue raised ({feedbackCount}) — view
+                            </button>
+                          )}
                           <div className="mt-3 flex items-center justify-between gap-2">
                             <span className={`text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded border ${PRIORITY_COLOR[t.priority] || PRIORITY_COLOR.medium}`}>{t.priority}</span>
                             <select value={t.status} onChange={(e) => moveTask(t, e.target.value)} className="bg-[#161622] border border-white/10 rounded text-[10px] text-white px-1.5 py-0.5">
@@ -188,6 +226,63 @@ const AdminTasks = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Task Dialog */}
+      <Dialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)}>
+        <DialogContent className="bg-[#12121A] border border-white/10">
+          <DialogHeader>
+            <DialogTitle className="text-white">Edit task</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <input value={editDraft.title} onChange={(e) => setEditDraft({ ...editDraft, title: e.target.value })} placeholder="Title" className="w-full bg-[#0A0A0F] border border-white/10 rounded-[10px] px-3 py-2 text-sm text-white placeholder:text-[#C0C0C8]/40" />
+            <textarea value={editDraft.description} onChange={(e) => setEditDraft({ ...editDraft, description: e.target.value })} rows="3" placeholder="Description" className="w-full bg-[#0A0A0F] border border-white/10 rounded-[10px] px-3 py-2 text-sm text-white placeholder:text-[#C0C0C8]/40" />
+            <div className="flex gap-3">
+              <select value={editDraft.priority} onChange={(e) => setEditDraft({ ...editDraft, priority: e.target.value })} className="flex-1 bg-[#0A0A0F] border border-white/10 rounded-[10px] px-3 py-2 text-sm text-white">
+                <option value="low">low</option><option value="medium">medium</option><option value="high">high</option><option value="urgent">urgent</option>
+              </select>
+              <select value={editDraft.status} onChange={(e) => setEditDraft({ ...editDraft, status: e.target.value })} className="flex-1 bg-[#0A0A0F] border border-white/10 rounded-[10px] px-3 py-2 text-sm text-white">
+                {COLS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+              </select>
+            </div>
+            <select value={editDraft.assignee} onChange={(e) => setEditDraft({ ...editDraft, assignee: e.target.value })} className="w-full bg-[#0A0A0F] border border-white/10 rounded-[10px] px-3 py-2 text-sm text-white">
+              <option value="">Unassigned</option>
+              {employees.map((emp) => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
+            </select>
+            <button onClick={saveEdit} className="w-full bg-[#F97316] text-[#0A0A0F] rounded-[10px] px-4 py-2.5 text-sm font-bold hover:bg-[#FBBF24]">Save changes</button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Task Issue / Feedback Dialog */}
+      <Dialog open={!!viewingIssue} onOpenChange={(v) => !v && setViewingIssue(null)}>
+        <DialogContent className="bg-[#12121A] border border-white/10 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-[#EF4444]" /> Task Issue — {viewingIssue?.title}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {(viewingIssue?.feedback || []).length === 0 ? (
+              <p className="text-[#C0C0C8]/55 text-sm">No feedback messages.</p>
+            ) : (
+              <div className="space-y-2 max-h-80 overflow-y-auto">
+                {(viewingIssue?.feedback || []).map((f, i) => (
+                  <div key={i} className="bg-[#0A0A0F] border border-white/10 rounded-[10px] px-3 py-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[#00D4FF] text-xs font-bold">{f.byName || 'Employee'}</span>
+                      <span className="text-[#C0C0C8]/45 text-[10px]">{f.createdAt?.split('T')[0]}</span>
+                    </div>
+                    <p className="text-white text-sm">{f.message}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button onClick={() => resolveIssue(viewingIssue.id)} className="w-full bg-[#10B981] text-[#0A0A0F] rounded-[10px] px-4 py-2.5 text-sm font-bold hover:bg-[#34D399]">
+              Mark issue resolved
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
