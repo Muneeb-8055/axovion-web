@@ -15,7 +15,7 @@ from models.schemas import (
 )
 from services.db import db, serialize_doc
 from services.auth_service import (
-    hash_password, verify_password, create_token, require_customer,
+    hash_password, verify_password, create_token, require_customer, require_admin,
 )
 from services.lead_scoring import score_lead
 from services.resend_service import send_email, tpl_audit_submitted
@@ -60,6 +60,20 @@ async def customer_signup(payload: CustomerSignupInput):
         "updatedAt": now,
     }
     await db.customers.insert_one(customer)
+
+    # Broadcast notification so admins AND employees see the new signup
+    company_suffix = f" from {customer['name']}" if not customer.get("company") else f" from {customer['name']} ({customer['company']})"
+    await db.notifications.insert_one({
+        "id": str(uuid.uuid4()),
+        "type": "customer_signup",
+        "customerId": customer["id"],
+        "customerName": customer["name"],
+        "customerEmail": email,
+        "message": f"New customer signup{company_suffix}",
+        "broadcast": True,
+        "read": False,
+        "createdAt": now,
+    })
 
     token = create_token({
         "sub": customer["id"], "email": email, "role": "customer", "name": customer["name"],
@@ -274,3 +288,27 @@ async def customer_create_booking(payload: dict, user: dict = Depends(require_cu
     }
     await db.bookings.insert_one(booking)
     return {"id": booking["id"], "ok": True, "message": "Strategy call requested. We'll be in touch shortly."}
+
+
+# ============ ADMIN: customer management ============
+@router.get("/admin/list")
+async def admin_list_customers(user: dict = Depends(require_admin)):
+    """Admin/Super Admin: list all customer accounts with audit & booking counts."""
+    cursor = db.customers.find({}, {"_id": 0, "passwordHash": 0}).sort("createdAt", -1).limit(1000)
+    customers = await cursor.to_list(1000)
+    result = []
+    for c in customers:
+        email = c.get("email")
+        audit_count = await db.audits.count_documents({"contactEmail": email})
+        booking_count = await db.bookings.count_documents({"email": email})
+        result.append({
+            "id": c.get("id"),
+            "name": c.get("name", ""),
+            "email": email,
+            "company": c.get("company"),
+            "phone": c.get("phone"),
+            "auditCount": audit_count,
+            "bookingCount": booking_count,
+            "createdAt": c.get("createdAt"),
+        })
+    return result

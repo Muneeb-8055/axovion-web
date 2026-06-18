@@ -198,4 +198,7 @@ export const adminApi = {
   getRecycleBin: (collection) => api.get('/recycle-bin', { params: collection ? { collection } : {} }),
   restoreRecycleItem: (id) => api.post(`/recycle-bin/${id}/restore`),
   purgeRecycleItem: (id) => api.delete(`/recycle-bin/${id}`),
+
+  // === Customers (admin view) ===
+  listCustomers: () => api.get('/customer/admin/list'),
 };

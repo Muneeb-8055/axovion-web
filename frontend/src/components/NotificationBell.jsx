@@ -9,6 +9,7 @@ const NOTIF_COLORS = {
   attendance_pending: 'bg-[#3B82F6]/15 text-[#3B82F6]',
   ot_approved: 'bg-[#F97316]/15 text-[#F97316]',
   correction_requested: 'bg-[#FBBF24]/15 text-[#FBBF24]',
+  customer_signup: 'bg-[#00D4FF]/15 text-[#00D4FF]',
 };
 
 const NOTIF_LABELS = {
@@ -18,6 +19,7 @@ const NOTIF_LABELS = {
   attendance_pending: 'Attendance Pending',
   ot_approved: 'Overtime Approved',
   correction_requested: 'Correction Requested',
+  customer_signup: 'New Signup',
 };
 
 const NotificationBell = ({ useEmployeeToken = false }) => {

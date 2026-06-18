@@ -16,7 +16,8 @@ async def list_notifications(user: dict = Depends(require_employee)):
     if role in ("admin", "super_admin"):
         query = {}
     else:
-        query = {"employeeId": user["sub"]}
+        # Employees see their own notifications plus anything broadcast to all staff
+        query = {"$or": [{"employeeId": user["sub"]}, {"broadcast": True}]}
 
     cursor = db.notifications.find(query).sort("createdAt", -1).limit(50)
     records = []
@@ -26,8 +27,12 @@ async def list_notifications(user: dict = Depends(require_employee)):
             "type": r.get("type"),
             "employeeId": r.get("employeeId"),
             "employeeName": r.get("employeeName"),
+            "customerId": r.get("customerId"),
+            "customerName": r.get("customerName"),
+            "customerEmail": r.get("customerEmail"),
             "leaveId": r.get("leaveId"),
             "message": r.get("message"),
+            "broadcast": r.get("broadcast", False),
             "read": r.get("read", False),
             "createdAt": r.get("createdAt"),
         })
@@ -41,7 +46,7 @@ async def mark_all_read(user: dict = Depends(require_employee)):
     if role in ("admin", "super_admin"):
         query = {}
     else:
-        query = {"employeeId": user["sub"]}
+        query = {"$or": [{"employeeId": user["sub"]}, {"broadcast": True}]}
 
     await db.notifications.update_many(
         query,

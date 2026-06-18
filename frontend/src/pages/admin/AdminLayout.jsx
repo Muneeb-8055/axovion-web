@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth, clearAuth } from '../../lib/hooks';
 import { LOGO_URL } from '../../lib/content';
-import { LayoutDashboard, ClipboardList, MessageSquare, CalendarCheck, KanbanSquare, BarChart3, Mail, Phone, Settings, LogOut, Search, Users, Clock, CalendarDays, Timer, TrendingUp, Archive } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, MessageSquare, CalendarCheck, KanbanSquare, BarChart3, Mail, Phone, Settings, LogOut, Search, Users, Clock, CalendarDays, Timer, TrendingUp, Archive, UserCircle } from 'lucide-react';
 import NotificationBell from '../../components/NotificationBell';
 
 const NAV = [
@@ -12,6 +12,7 @@ const NAV = [
   { to: '/admin/bookings', label: 'Bookings', icon: CalendarCheck },
   { to: '/admin/tasks', label: 'Tasks', icon: KanbanSquare },
   { to: '/admin/employees', label: 'Employees', icon: Users },
+  { to: '/admin/customers', label: 'Customers', icon: UserCircle },
   { to: '/admin/attendance', label: 'Attendance', icon: Clock },
   { to: '/admin/leaves', label: 'Leaves', icon: CalendarDays },
   { to: '/admin/overtime', label: 'Overtime', icon: Timer },

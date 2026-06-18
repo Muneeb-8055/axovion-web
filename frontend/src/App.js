@@ -28,6 +28,7 @@ import AdminCalls from './pages/admin/Calls';
 import AdminSettings from './pages/admin/Settings';
 import EmployeeManager from './pages/admin/EmployeeManager';
 import RecycleBin from './pages/admin/RecycleBin';
+import Customers from './pages/admin/Customers';
 
 import EmployeeLogin from './pages/employee/EmployeeLogin';
 import { EmployeeLayout } from './pages/employee/EmployeeLayout';
@@ -75,8 +76,7 @@ function App() {
             <Route path="chats" element={<AdminChats />} />
             <Route path="bookings" element={<AdminBookings />} />
             <Route path="tasks" element={<AdminTasks />} />
-            <Route path="employees" element={<EmployeeManager />} />
-            <Route path="attendance" element={<Attendance />} />
+            <Route path="employees" element={<EmployeeManager />} />            <Route path="attendance" element={<Attendance />} />
             <Route path="leaves" element={<Leaves />} />
             <Route path="overtime" element={<Overtime />} />
             <Route path="reports" element={<Reports />} />
@@ -85,6 +85,7 @@ function App() {
             <Route path="calls" element={<AdminCalls />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="recycle-bin" element={<RecycleBin />} />
+            <Route path="customers" element={<Customers />} />
           </Route>
 
           {/* Employee */}
