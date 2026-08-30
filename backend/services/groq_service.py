@@ -1,8 +1,10 @@
-"""Groq LLM service — powers chatbot + audit analysis."""
 import os
 import json
 import httpx
+import logging
 from typing import List, Dict, Any, Optional
+
+logger = logging.getLogger(__name__)
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", os.environ.get("LLM_API_KEY", ""))
 GROQ_MODEL = os.environ.get("GROQ_MODEL", os.environ.get("LLM_MODEL", "qwen/qwen3.8-27b"))
@@ -111,17 +113,23 @@ async def chat_complete(
         payload["response_format"] = {"type": "json_object"}
 
     async with httpx.AsyncClient(timeout=60) as client:
-        r = await client.post(
-            GROQ_URL,
-            headers={
-                "Authorization": f"Bearer {GROQ_API_KEY}",
-                "Content-Type": "application/json",
-            },
-            json=payload,
-        )
-        r.raise_for_status()
-        data = r.json()
-        return data["choices"][0]["message"]["content"]
+        try:
+            r = await client.post(
+                GROQ_URL,
+                headers={
+                    "Authorization": f"Bearer {GROQ_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+            )
+            if r.status_code != 200:
+                logger.error("LLM API error %s: %s (URL=%s, Model=%s)", r.status_code, r.text, GROQ_URL, GROQ_MODEL)
+            r.raise_for_status()
+            data = r.json()
+            return data["choices"][0]["message"]["content"]
+        except Exception as e:
+            logger.error("Failed LLM call to %s with model %s: %s", GROQ_URL, GROQ_MODEL, e)
+            raise
 
 
 async def chatbot_response(thread_messages: List[Dict[str, str]], user_message: str) -> str:

@@ -52,13 +52,26 @@ api_router.include_router(misc_router)
 app.include_router(api_router)
 
 # CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+cors_origins_env = os.environ.get("CORS_ORIGINS", "*")
+cors_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+
+if "*" in cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_credentials=True,
+        allow_origin_regex=r"https?://.*",
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_credentials=True,
+        allow_origins=cors_origins,
+        allow_origin_regex=r"https?://.*\.vercel\.app",
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 logging.basicConfig(
     level=logging.INFO,
