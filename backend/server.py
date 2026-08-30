@@ -34,7 +34,13 @@ async def root():
 
 @api_router.get("/health")
 async def health():
-    return {"status": "healthy"}
+    from services.db import get_db_status
+    db_status = await get_db_status()
+    return {
+        "status": "healthy",
+        "database": db_status,
+        "version": "1.0.0"
+    }
 
 
 # Mount feature routers

@@ -6,6 +6,8 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pathlib import Path
 from dotenv import load_dotenv
 
+import certifi
+
 logger = logging.getLogger(__name__)
 
 ROOT_DIR = Path(__file__).parent.parent
@@ -13,6 +15,7 @@ load_dotenv(ROOT_DIR / ".env")
 
 mongo_url = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
 db_name = os.environ.get("DB_NAME", "axovion")
+_is_real_mongo = False
 
 
 class DatabaseProxy:
@@ -35,8 +38,15 @@ class DatabaseProxy:
 
 db = DatabaseProxy()
 
+
+def _create_motor_client(url: str):
+    if "mongodb+srv://" in url or "ssl=true" in url.lower() or "tls=true" in url.lower():
+        return AsyncIOMotorClient(url, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=4000)
+    return AsyncIOMotorClient(url, serverSelectionTimeoutMS=2000)
+
+
 try:
-    _client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=1000)
+    _client = _create_motor_client(mongo_url)
     db.set_target(_client[db_name])
 except Exception:
     import mongomock_motor
@@ -84,14 +94,48 @@ def deserialize_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
     return doc
 
 
-async def init_db():
-    """Create indexes + seed defaults."""
-    global _client, db
+async def get_db_status() -> Dict[str, Any]:
+    """Return diagnostic information about the database connection."""
+    global _client, _is_real_mongo, mongo_url, db_name
+    
+    status_info = {
+        "connected": False,
+        "mode": "in-memory-mock" if not _is_real_mongo else "real-mongodb",
+        "database": db_name,
+        "url_masked": mongo_url.split("@")[-1] if "@" in mongo_url else ("localhost" if "localhost" in mongo_url else "configured"),
+        "collections": {},
+    }
+    
     try:
         if isinstance(_client, AsyncIOMotorClient):
             await _client.admin.command("ping")
+            status_info["connected"] = True
+            status_info["mode"] = "real-mongodb"
+        else:
+            status_info["connected"] = True
+            status_info["mode"] = "in-memory-mock"
+            
+        status_info["collections"]["users"] = await db.users.count_documents({})
+        status_info["collections"]["audits"] = await db.audits.count_documents({})
+        status_info["collections"]["chats"] = await db.chats.count_documents({})
+        status_info["collections"]["bookings"] = await db.bookings.count_documents({})
+    except Exception as e:
+        status_info["error"] = str(e)
+        status_info["connected"] = False
+        
+    return status_info
+
+
+async def init_db():
+    """Create indexes + seed defaults."""
+    global _client, _is_real_mongo, db
+    try:
+        if isinstance(_client, AsyncIOMotorClient):
+            await _client.admin.command("ping")
+            _is_real_mongo = True
             logger.info("Successfully connected to MongoDB at %s", mongo_url)
     except Exception as e:
+        _is_real_mongo = False
         logger.warning(
             "MongoDB is not reachable (%s). Falling back to in-memory mock MongoDB storage for local development.",
             e,
@@ -111,9 +155,9 @@ async def init_db():
     except Exception as e:
         logger.warning("Index creation note: %s", e)
 
-    # Seed default admin user (idempotent)
+    # Seed default admin user (idempotent & updates password hash if changed)
     from services.auth_service import hash_password
-    admin_email = os.environ.get("ADMIN_EMAIL", "admin@axovion.io")
+    admin_email = os.environ.get("ADMIN_EMAIL", "admin@axovion.io").lower()
     admin_password = os.environ.get("ADMIN_PASSWORD", "AxovionAdmin2025!")
     existing = await db.users.find_one({"email": admin_email})
     if not existing:
@@ -126,6 +170,12 @@ async def init_db():
             "passwordHash": hash_password(admin_password),
             "createdAt": datetime.now(timezone.utc).isoformat(),
         })
+    else:
+        # Ensure password matches env var if updated
+        await db.users.update_one(
+            {"email": admin_email},
+            {"$set": {"passwordHash": hash_password(admin_password), "role": "admin"}}
+        )
 
     # Seed settings
     existing_settings = await db.settings.find_one({"id": "global"})
