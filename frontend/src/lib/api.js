@@ -4,7 +4,12 @@ import axios from 'axios';
 // API Configuration
 // In production (Vercel), use the environment variable
 // In development, use localhost
-export const BACKEND_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+const rawBackendUrl = (process.env.REACT_APP_API_URL || 'http://localhost:8000/api').trim();
+const normalizedBackendUrl = rawBackendUrl.endsWith('/api') || rawBackendUrl.endsWith('/api/')
+  ? rawBackendUrl.replace(/\/+$/, '')
+  : `${rawBackendUrl.replace(/\/+$/, '')}/api`;
+
+export const BACKEND_URL = normalizedBackendUrl;
 export const API = BACKEND_URL;
 
 export const api = axios.create({
