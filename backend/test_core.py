@@ -19,7 +19,7 @@ load_dotenv(ROOT / ".env")
 
 # --- Config ---
 GROQ_API_KEY = os.environ["GROQ_API_KEY"]
-GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "qwen/qwen3.8-27b")
 KIMI_API_KEY = os.environ["KIMI_API_KEY"]
 KIMI_BASE_URL = os.environ.get("KIMI_BASE_URL", "https://api.moonshot.ai/v1")
 KIMI_MODEL = os.environ.get("KIMI_MODEL", "kimi-k2-0905-preview")

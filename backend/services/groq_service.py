@@ -4,9 +4,9 @@ import json
 import httpx
 from typing import List, Dict, Any, Optional
 
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
-GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", os.environ.get("LLM_API_KEY", ""))
+GROQ_MODEL = os.environ.get("GROQ_MODEL", os.environ.get("LLM_MODEL", "qwen/qwen3.8-27b"))
+GROQ_URL = os.environ.get("GROQ_URL", os.environ.get("LLM_BASE_URL", "https://api.groq.com/openai/v1/chat/completions"))
 
 CHATBOT_SYSTEM_PROMPT = """You are Axovion AI, the chatbot for Axovion.io — a premium AI automation agency that builds ROI-focused AI agents for businesses.
 
