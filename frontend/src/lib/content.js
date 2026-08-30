@@ -2,22 +2,12 @@ export const LOGO_URL = 'https://customer-assets.emergentagent.com/job_137b2a28-
 export const BRAND_NAME = 'Axovion.io';
 export const BRAND_TAGLINE = 'Automate to Win';
 
-export const SOCIAL_LINKS = {
-  instagram: 'https://www.instagram.com/axovion.io?igsh=MW9ieGpvbnQ0enoybw==',
-  facebook: 'https://www.facebook.com/share/18tybvyFQ9/',
-  facebookPage: 'https://www.facebook.com/share/1LpN7Ao1fe/',
-  youtube: 'https://www.youtube.com/@Axovion_io',
-  twitter: 'https://x.com/Axovionio',
-  linkedin: 'https://www.linkedin.com/in/axovion-io-610489409',
-  reddit: 'https://www.reddit.com/user/Aggressive-Raise-635/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button',
-};
-
 export const SERVICES = [
   {
     slug: 'ai-audit',
     icon: 'ClipboardCheck',
     title: 'Free AI Audit',
-    short: 'Workflow automation map + ROI estimate + recommended agents — delivered in 24h.',
+    short: 'Workflow automation map + ROI estimate + recommended agents, delivered in 24h.',
     full: 'A deep-dive scan of your business that produces a custom automation map, ROI/savings projections, recommended AI agents, and an implementation timeline.',
     bullets: [
       'Workflow automation map',
@@ -59,7 +49,7 @@ export const SERVICES = [
     slug: 'booking-automation',
     icon: 'CalendarClock',
     title: 'Booking Automation',
-    short: 'Bookings, reminders, reschedules and no-show recovery — all handled by AI.',
+    short: 'Bookings, reminders, reschedules and no-show recovery, all handled by AI.',
     full: 'AI scheduling agents that book, remind, reschedule, and recover no-shows automatically with calendar integration.',
     bullets: [
       'Calendar integration',
@@ -73,7 +63,7 @@ export const SERVICES = [
     slug: 'ecommerce-support',
     icon: 'ShoppingCart',
     title: 'E-Commerce Support',
-    short: 'Order tracking, returns, recommendations — AI handles it all so your team can scale.',
+    short: 'Order tracking, returns, recommendations. AI handles it all so your team can scale.',
     full: 'Specialized AI agents for ecom: order tracking, return/refund handling, product recommendations, cart abandonment recovery.',
     bullets: [
       'Order tracking',
@@ -96,6 +86,20 @@ export const SERVICES = [
       'Revenue recovery tracking',
     ],
     industries: ['E-commerce'],
+  },
+  {
+    slug: 'crm-email',
+    icon: 'MailPlus',
+    title: 'CRM & Email Automation',
+    short: 'HubSpot/Salesforce sync, segmented flows, lead scoring, pipeline automation.',
+    full: 'End-to-end CRM & email automation: bidirectional sync, segmented email flows, lead scoring, pipeline triggers.',
+    bullets: [
+      'HubSpot/Salesforce sync',
+      'Segmented email flows',
+      'Lead scoring',
+      'Pipeline automation',
+    ],
+    industries: ['B2B', 'SaaS', 'Agencies'],
   },
   {
     slug: 'consulting',
@@ -178,7 +182,7 @@ export const BLOG_POSTS = [
     slug: 'ai-chatbots-ecommerce-hours-saved',
     category: 'Case Studies',
     title: 'How AI Chatbots Save E-Commerce Brands 20+ Hours a Week',
-    excerpt: 'A breakdown of where the hours actually come from — and the 3 chatbot patterns that drive real ROI.',
+    excerpt: 'A breakdown of where the hours actually come from, and the 3 chatbot patterns that drive real ROI.',
     date: '2026-05-08',
     readTime: '6 min read',
     image: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85&w=800',
@@ -196,7 +200,7 @@ export const BLOG_POSTS = [
     slug: '5-workflows-clinics-automate-2026',
     category: 'Strategy',
     title: '5 Workflows Every Clinic Should Automate in 2026',
-    excerpt: 'Booking, reminders, intake, follow-ups, reactivation — the exact 5 workflows we install for every clinic client.',
+    excerpt: 'Booking, reminders, intake, follow-ups, reactivation. The exact 5 workflows we install for every clinic client.',
     date: '2026-04-22',
     readTime: '7 min read',
     image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85&w=800',
@@ -223,7 +227,7 @@ export const BLOG_POSTS = [
     slug: 'workflow-automation-examples',
     category: 'Trends',
     title: '10 Workflow Automation Examples That Pay Back in 30 Days',
-    excerpt: 'Quick-win automations — lead routing, abandoned cart, reminder loops, FAQ deflection — that pay for themselves fast.',
+    excerpt: 'Quick-win automations (lead routing, abandoned cart, reminder loops, FAQ deflection) that pay for themselves fast.',
     date: '2026-04-01',
     readTime: '6 min read',
     image: 'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85&w=800',

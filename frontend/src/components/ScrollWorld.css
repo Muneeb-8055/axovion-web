@@ -1,0 +1,275 @@
+/* ===========================================================================
+   ScrollWorld theme layer
+   ---------------------------------------------------------------------------
+   The vendored scrub engine ships its own defaults inside `@layer sw`. Every
+   rule in this file is deliberately UNLAYERED, so it wins over the engine
+   regardless of which stylesheet lands in <head> first.
+
+   Colour comes from the ax tokens only, so `--sw-bg` is the page background
+   by construction and can never drift from it.
+   =========================================================================== */
+
+/* Host box.
+   `position: relative; z-index: 0` makes the host a stacking context. The
+   engine's fixed layers (sky/stage/copy/route) still position against the
+   viewport, but they now paint inside this context, so page content below the
+   cinematic only has to clear z-index 0 rather than the engine's internal 60. */
+.ax-sw-host {
+  position: relative;
+  z-index: 0;
+}
+
+.ax-sw-host.sw-root {
+  --sw-bg:           var(--ax-bg);
+  --sw-ink:          var(--ax-heading);
+  --sw-ink-soft:     var(--ax-muted);
+  --sw-accent:       var(--ax-accent);
+  --sw-font-display: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --sw-font-body:    'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   Engine chrome we do not use.
+   - topbar / scrollbar: the site already has a sticky primary nav at the same
+     edge, and a second bar there reads as breakage.
+   - hint: a scroll cue, banned by DESIGN.md.
+   - copy__num: a section-numbering eyebrow ("01 / 05"), banned by DESIGN.md.
+   - particles: decorative drifting shapes with nothing to communicate.
+   --------------------------------------------------------------------------- */
+.ax-sw-host .sw-topbar,
+.ax-sw-host .sw-scrollbar,
+.ax-sw-host .sw-hint,
+.ax-sw-host .sw-copy__num,
+.ax-sw-host .sw-pt {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Legibility scrim — cinematic grade behind the copy column.
+   Sits above the video layer (sw-sky/sw-stage) and below the copy layer
+   (sw-copylayer). The gradient starts at --ax-bg at full opacity on the
+   left edge and eases to transparent before the midpoint, so it reads as
+   intentional cinematic grading rather than a clipped box.
+   --------------------------------------------------------------------------- */
+.ax-sw-host .sw-copylayer::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  /* wide enough to cover the copy column plus breathing room */
+  width: min(58vw, 680px);
+  height: 100%;
+  pointer-events: none;
+  /* from full-opacity page background on the left, fading to transparent */
+  background: linear-gradient(
+    to right,
+    var(--ax-bg) 0%,
+    rgba(10, 10, 15, 0.92) 18%,
+    rgba(10, 10, 15, 0.72) 38%,
+    rgba(10, 10, 15, 0.38) 56%,
+    transparent 100%
+  );
+  /* Sits above the video stage. The copy itself is lifted to z-index 2 below,
+     because a positioned ::before with z-index 1 paints OVER auto-z children
+     and was dimming the body copy to roughly 2.5:1 contrast. */
+  z-index: 0;
+}
+
+/* On narrow viewports the copy occupies the full width; switch to a
+   bottom-anchored gradient so text at the base always has a backing. */
+@media (max-width: 767px) {
+  .ax-sw-host .sw-copylayer::before {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 55%;
+    background: linear-gradient(
+      to top,
+      var(--ax-bg) 0%,
+      rgba(10, 10, 15, 0.88) 28%,
+      rgba(10, 10, 15, 0.55) 55%,
+      transparent 100%
+    );
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Scene copy
+   --------------------------------------------------------------------------- */
+.ax-sw-host .sw-copy {
+  /* Lift the text above the legibility scrim. Do NOT set `position` here: the
+     engine positions .sw-copy absolutely so all five blocks stack in place, and
+     overriding it to relative drops them into flow and off the viewport. */
+  z-index: 2;
+  width: min(44vw, 500px);
+}
+
+.ax-sw-host .sw-copy__eyebrow {
+  margin-top: 0;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--ax-accent);
+}
+
+.ax-sw-host .sw-copy__title {
+  font-family: var(--sw-font-display);
+  font-weight: 600;
+  font-size: clamp(2.25rem, 4.6vw, 4rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  margin: 14px 0 0;
+  color: var(--ax-heading);
+  text-wrap: balance;
+  text-shadow: 0 2px 30px var(--ax-bg);
+}
+
+.ax-sw-host .sw-copy__body {
+  margin-top: 18px;
+  font-size: clamp(1rem, 1.2vw, 1.125rem);
+  line-height: 1.6;
+  max-width: 42ch;
+  color: var(--ax-text);
+  text-shadow: 0 1px 18px var(--ax-bg);
+}
+
+/* The engine sets pointer-events on the .sw-copy article from scroll progress,
+   but its own rule forces .sw-copy__cta back to `auto`. That leaves the final
+   CTA clickable across the whole flight while it is still invisible. Inheriting
+   ties the buttons to the article's real state. */
+.ax-sw-host .sw-copy__cta {
+  pointer-events: inherit;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+/* Keyboard users can tab to the CTA before the scroll has revealed it. Rather
+   than trapping focus on an invisible control, reveal the block it belongs to.
+   `!important` is required: the engine writes opacity as an inline style. */
+.ax-sw-host .sw-copy:focus-within {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Buttons. Radius follows the site control scale (12px), not the engine's pill.
+   --------------------------------------------------------------------------- */
+.ax-sw-host .sw-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 13px 24px;
+  border-radius: var(--ax-radius-control);
+  font-family: var(--sw-font-body);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  transition:
+    background-color var(--ax-duration) var(--ax-ease-out),
+    border-color     var(--ax-duration) var(--ax-ease-out),
+    transform        var(--ax-duration) var(--ax-ease-out);
+}
+
+.ax-sw-host .sw-btn--primary {
+  background: var(--ax-accent);
+  color: var(--ax-on-accent);
+  border: 1px solid transparent;
+}
+.ax-sw-host .sw-btn--primary:hover {
+  background: var(--ax-accent-dim);
+  transform: translateY(-1px);
+}
+
+.ax-sw-host .sw-btn--ghost {
+  background: var(--ax-surface);
+  color: var(--ax-heading);
+  border: 1px solid var(--ax-border-strong);
+}
+.ax-sw-host .sw-btn--ghost:hover {
+  border-color: rgba(0, 212, 255, 0.45);
+  transform: translateY(-1px);
+}
+
+.ax-sw-host .sw-btn:active {
+  transform: scale(0.98);
+}
+
+/* ---------------------------------------------------------------------------
+   Chapter rail. Interactive wayfinding, so it stays, but restrained and with a
+   finger-sized hit area on touch.
+   --------------------------------------------------------------------------- */
+.ax-sw-host .sw-route {
+  gap: 10px;
+}
+.ax-sw-host .sw-route::before {
+  opacity: 0.16;
+}
+.ax-sw-host .sw-route__dot {
+  width: 28px;
+  height: 28px;
+}
+.ax-sw-host .sw-route__dot i {
+  background: rgba(0, 212, 255, 0.34);
+}
+.ax-sw-host .sw-route__label {
+  background: var(--ax-surface);
+  border: 1px solid var(--ax-border);
+  color: var(--ax-heading);
+  font-family: var(--sw-font-body);
+  font-weight: 500;
+  backdrop-filter: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .ax-sw-host .sw-route__dot {
+    width: 44px;
+    height: 44px;
+  }
+  .ax-sw-host .sw-route {
+    gap: 2px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Out-of-band state.
+   The engine's layers are `position: fixed` for the life of the mount. Once the
+   cinematic band has scrolled past, they must stop covering the page. An
+   IntersectionObserver in ScrollWorld.jsx flips data-inview.
+   --------------------------------------------------------------------------- */
+.ax-sw-host .sw-sky,
+.ax-sw-host .sw-stage,
+.ax-sw-host .sw-copylayer,
+.ax-sw-host .sw-route {
+  transition: opacity var(--ax-duration) var(--ax-ease-out);
+}
+
+.ax-sw-host[data-inview='false'] .sw-sky,
+.ax-sw-host[data-inview='false'] .sw-stage,
+.ax-sw-host[data-inview='false'] .sw-copylayer,
+.ax-sw-host[data-inview='false'] .sw-route {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Static fallback sequence (reduced motion, save-data, 2g, or engine failure).
+   A designed state, not a degradation: same copy, same order, same CTAs.
+   --------------------------------------------------------------------------- */
+.ax-sw-still {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--ax-radius-panel);
+  background: var(--ax-surface);
+  border: 1px solid var(--ax-border);
+}
+.ax-sw-still img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  aspect-ratio: 16 / 9;
+}

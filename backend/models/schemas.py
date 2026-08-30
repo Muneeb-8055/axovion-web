@@ -214,47 +214,13 @@ class LoginInput(BaseModel):
     password: str
 
 
-class CustomerSignupInput(BaseModel):
-    name: str
-    email: EmailStr
-    password: str
-    company: Optional[str] = None
-    phone: Optional[str] = None
-
-
-class CustomerProfileUpdate(BaseModel):
-    name: Optional[str] = None
-    company: Optional[str] = None
-    phone: Optional[str] = None
-
-
-class PasswordChangeInput(BaseModel):
-    currentPassword: str
-    newPassword: str
-
-
-class AdminPermissions(BaseModel):
-    """Granular permissions for Admin role — all default False."""
-    create_employee: bool = False
-    approve_attendance: bool = False
-    approve_leaves: bool = False
-    assign_tasks: bool = False
-    manage_tasks: bool = False
-    edit_attendance: bool = False
-
-
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     email: str
     name: str
-    passwordHash: str = ""
-    photoUrl: Optional[str] = None
-    role: Literal["super_admin", "admin", "employee"] = "employee"
-    isActive: bool = True
-    adminPermissions: Optional[AdminPermissions] = None
+    role: Literal["admin", "sales", "developer"] = "admin"
     createdAt: datetime = Field(default_factory=_now)
-    updatedAt: datetime = Field(default_factory=_now)
 
 
 # ============ SETTINGS ============
@@ -272,74 +238,4 @@ class Settings(BaseModel):
     highValueBudgetUsd: int = 5000
     autoCallEnabled: bool = False
     autoEmailEnabled: bool = True
-    monthlyTargetHours: float = 208.0
     updatedAt: datetime = Field(default_factory=_now)
-
-
-# ============ EMS: EMPLOYEE PROFILE ============
-class EmployeeCreateInput(BaseModel):
-    name: str
-    email: EmailStr
-    password: str
-    role: Literal["admin", "employee"] = "employee"
-
-
-class EmployeeUpdateInput(BaseModel):
-    name: Optional[str] = None
-    photoUrl: Optional[str] = None
-    isActive: Optional[bool] = None
-
-
-class AdminPermissionsUpdate(BaseModel):
-    create_employee: bool = False
-    approve_attendance: bool = False
-    approve_leaves: bool = False
-    assign_tasks: bool = False
-    manage_tasks: bool = False
-    edit_attendance: bool = False
-
-
-# ============ EMS: ATTENDANCE ============
-class ClockInResponse(BaseModel):
-    recordId: str
-    clockIn: str
-    message: str
-
-
-class ClockOutResponse(BaseModel):
-    recordId: str
-    clockIn: str
-    clockOut: str
-    totalHours: float
-    message: str
-
-
-class AttendanceVerifyInput(BaseModel):
-    employeeId: Optional[str] = None
-    date: str  # YYYY-MM-DD
-
-
-class AttendanceCorrectInput(BaseModel):
-    clockIn: str  # ISO datetime
-    clockOut: str  # ISO datetime
-    reason: str
-
-
-# ============ EMS: LEAVE ============
-class LeaveApplyInput(BaseModel):
-    date: str  # YYYY-MM-DD
-    type: Literal["half", "full"] = "full"
-    reason: str
-
-
-class LeaveDecisionInput(BaseModel):
-    reason: Optional[str] = None  # required if rejecting
-
-
-# ============ EMS: OVERTIME ============
-class OvertimeLogInput(BaseModel):
-    employeeId: str
-    date: str  # YYYY-MM-DD
-    hours: float = Field(gt=0)
-    reason: str
-    project: str

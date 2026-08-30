@@ -11,8 +11,10 @@ import Audit from './pages/Audit';
 import AuditReport from './pages/AuditReport';
 import Results from './pages/Results';
 import About from './pages/About';
+import Team from './pages/Team';
+import Blog from './pages/Blog';
 import Contact from './pages/Contact';
-import Demo from './pages/Demo';
+import NotFound from './pages/NotFound';
 
 import AdminLogin from './pages/admin/Login';
 import AdminLayout from './pages/admin/AdminLayout';
@@ -26,29 +28,6 @@ import AdminAnalytics from './pages/admin/Analytics';
 import AdminEmails from './pages/admin/Emails';
 import AdminCalls from './pages/admin/Calls';
 import AdminSettings from './pages/admin/Settings';
-import EmployeeManager from './pages/admin/EmployeeManager';
-import RecycleBin from './pages/admin/RecycleBin';
-import Customers from './pages/admin/Customers';
-
-import EmployeeLogin from './pages/employee/EmployeeLogin';
-import { EmployeeLayout } from './pages/employee/EmployeeLayout';
-import EmployeeDashboard from './pages/employee/EmployeeDashboard';
-import MyAttendance from './pages/employee/MyAttendance';
-import MyLeaves from './pages/employee/MyLeaves';
-import MyTasks from './pages/employee/MyTasks';
-import MyOvertime from './pages/employee/MyOvertime';
-import Profile from './pages/employee/Profile';
-import Attendance from './pages/admin/Attendance';
-import Leaves from './pages/admin/Leaves';
-import Overtime from './pages/admin/Overtime';
-import Reports from './pages/admin/Reports';
-
-import CustomerAuth from './pages/customer/CustomerAuth';
-import CustomerLayout from './pages/customer/CustomerLayout';
-import CustomerDashboard from './pages/customer/CustomerDashboard';
-import CustomerAudit from './pages/customer/CustomerAudit';
-import CustomerBookings from './pages/customer/CustomerBookings';
-import CustomerAccount from './pages/customer/CustomerAccount';
 
 const WithPublic = ({ children }) => <PublicLayout>{children}</PublicLayout>;
 
@@ -64,8 +43,9 @@ function App() {
           <Route path="/audit-report/:id" element={<WithPublic><AuditReport /></WithPublic>} />
           <Route path="/results" element={<WithPublic><Results /></WithPublic>} />
           <Route path="/about" element={<WithPublic><About /></WithPublic>} />
+          <Route path="/team" element={<WithPublic><Team /></WithPublic>} />
+          <Route path="/blog" element={<WithPublic><Blog /></WithPublic>} />
           <Route path="/contact" element={<WithPublic><Contact /></WithPublic>} />
-          <Route path="/demo" element={<WithPublic><Demo /></WithPublic>} />
 
           {/* Admin */}
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -76,41 +56,15 @@ function App() {
             <Route path="chats" element={<AdminChats />} />
             <Route path="bookings" element={<AdminBookings />} />
             <Route path="tasks" element={<AdminTasks />} />
-            <Route path="employees" element={<EmployeeManager />} />            <Route path="attendance" element={<Attendance />} />
-            <Route path="leaves" element={<Leaves />} />
-            <Route path="overtime" element={<Overtime />} />
-            <Route path="reports" element={<Reports />} />
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="emails" element={<AdminEmails />} />
             <Route path="calls" element={<AdminCalls />} />
             <Route path="settings" element={<AdminSettings />} />
-            <Route path="recycle-bin" element={<RecycleBin />} />
-            <Route path="customers" element={<Customers />} />
           </Route>
 
-          {/* Employee */}
-          <Route path="/employee/login" element={<EmployeeLogin />} />
-          <Route path="/employee" element={<EmployeeLayout />}>
-            <Route index element={<EmployeeDashboard />} />
-            <Route path="attendance" element={<MyAttendance />} />
-            <Route path="tasks" element={<MyTasks />} />
-            <Route path="leaves" element={<MyLeaves />} />
-            <Route path="overtime" element={<MyOvertime />} />
-            <Route path="profile" element={<Profile />} />
-          </Route>
-
-          {/* Customer Portal */}
-          <Route path="/login" element={<CustomerAuth mode="login" />} />
-          <Route path="/signup" element={<CustomerAuth mode="signup" />} />
-          <Route path="/dashboard" element={<CustomerLayout />}>
-            <Route index element={<CustomerDashboard />} />
-            <Route path="audit" element={<CustomerAudit />} />
-            <Route path="bookings" element={<CustomerBookings />} />
-            <Route path="account" element={<CustomerAccount />} />
-          </Route>
-
-          {/* 404 -> Home */}
-          <Route path="*" element={<WithPublic><Home /></WithPublic>} />
+          {/* Real 404. This previously rendered <Home />, so every mistyped or retired
+              URL resolved as a duplicate homepage and was eligible for indexing. */}
+          <Route path="*" element={<WithPublic><NotFound /></WithPublic>} />
         </Routes>
         <Toaster
           theme="dark"

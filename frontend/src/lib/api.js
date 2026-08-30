@@ -1,3 +1,4 @@
+/* global process */
 import axios from 'axios';
 
 // API Configuration
@@ -6,30 +7,13 @@ import axios from 'axios';
 export const BACKEND_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 export const API = BACKEND_URL;
 
-// Debug logging (remove in production if desired)
-console.log('API URL:', API);
-
 export const api = axios.create({
   baseURL: API,
   headers: { 'Content-Type': 'application/json' },
   timeout: 60000,
 });
 
-// Separate instance for employee portal (uses different token key)
-export const empApi = axios.create({
-  baseURL: API,
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 60000,
-});
-
-// Separate instance for customer portal (uses its own token key)
-export const custApi = axios.create({
-  baseURL: API,
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 60000,
-});
-
-// Attach admin auth token
+// Attach auth token automatically
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('ax_token');
   if (token) {
@@ -38,54 +22,20 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Attach employee auth token
-empApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem('ax_emp_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// On 401, clear the stored token and redirect to login
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('ax_token');
+      localStorage.removeItem('ax_user');
+      if (window.location.pathname !== '/admin/login') {
+        window.location.href = '/admin/login';
+      }
+    }
+    return Promise.reject(error);
   }
-  return config;
-});
-
-// Employee-facing API methods (uses empApi instance with ax_emp_token)
-empApi.login = (data) => empApi.post('/auth/login', data);
-empApi.getMySummary = () => empApi.get('/attendance/my/summary');
-empApi.getMyAttendance = (limit) => empApi.get('/attendance/my', { params: { limit } });
-empApi.clockIn = () => empApi.post('/attendance/clock-in');
-empApi.clockOut = () => empApi.post('/attendance/clock-out');
-empApi.requestCorrection = (data) => empApi.post('/attendance/correct', data);
-empApi.getMyLeaves = (limit) => empApi.get('/leaves/my', { params: { limit } });
-empApi.getMyLeaveBalance = () => empApi.get('/leaves/balance/my');
-empApi.applyLeave = (data) => empApi.post('/leaves', data);
-empApi.getMyOvertime = (limit) => empApi.get('/overtime/my', { params: { limit } });
-empApi.listTasks = () => empApi.get('/tasks');
-empApi.listMyTasks = () => empApi.get('/tasks/my');
-empApi.updateMyTaskStatus = (id, status) => empApi.patch(`/tasks/${id}/status?status=${status}`);
-empApi.submitTaskFeedback = (id, data) => empApi.post(`/tasks/${id}/feedback`, data);
-
-// Attach customer auth token
-custApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem('ax_cust_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Customer portal API methods
-custApi.signup = (data) => custApi.post('/customer/signup', data);
-custApi.login = (data) => custApi.post('/customer/login', data);
-custApi.me = () => custApi.get('/customer/me');
-custApi.updateProfile = (data) => custApi.put('/customer/me', data);
-custApi.changePassword = (data) => custApi.put('/customer/me/password', data);
-custApi.dashboard = () => custApi.get('/customer/dashboard');
-custApi.auditEligibility = () => custApi.get('/customer/audit/eligibility');
-custApi.submitAudit = (data) => custApi.post('/customer/audit', data);
-custApi.getAudit = (id) => custApi.get(`/customer/audit/${id}`);
-custApi.createBooking = (data) => custApi.post('/customer/booking', data);
-empApi.getMyProfile = () => empApi.get('/employees/me');
-empApi.getNotifications = () => empApi.get('/notifications');
-empApi.markNotificationsRead = () => empApi.put('/notifications/mark-read');
+);
 
 // Public api (no auth interceptor side-effects)
 export const publicApi = {
@@ -118,11 +68,8 @@ export const adminApi = {
   deleteBooking: (id) => api.delete(`/bookings/${id}`),
   // tasks
   listTasks: () => api.get('/tasks'),
-  listMyTasks: () => api.get('/tasks/my'),
   createTask: (data) => api.post('/tasks', data),
   updateTask: (id, data) => api.put(`/tasks/${id}`, data),
-  updateMyTaskStatus: (id, status) => api.patch(`/tasks/${id}/status?status=${status}`),
-  resolveTaskIssue: (id) => api.put(`/tasks/${id}/resolve-issue`),
   deleteTask: (id) => api.delete(`/tasks/${id}`),
   // emails
   listEmails: () => api.get('/emails'),
@@ -142,63 +89,4 @@ export const adminApi = {
   getSettings: () => api.get('/settings/admin'),
   updateSettings: (data) => api.put('/settings/admin', data),
   listNewsletter: () => api.get('/newsletter/list'),
-
-  // === EMS: Employees ===
-  listEmployees: () => api.get('/employees'),
-  getEmployee: (id) => api.get(`/employees/${id}`),
-  getMyProfile: () => api.get('/employees/me'),
-  createEmployee: (data) => api.post('/employees', data),
-  updateEmployee: (id, data) => api.put(`/employees/${id}`, data),
-  deleteEmployee: (id) => api.delete(`/employees/${id}`),
-  deactivateEmployee: (id) => api.put(`/employees/${id}/deactivate`),
-  reactivateEmployee: (id) => api.put(`/employees/${id}/reactivate`),
-  updateAdminPermissions: (adminId, data) => api.put(`/employees/admins/${adminId}/permissions`, data),
-  getEmployeeProfileSummary: (id) => api.get(`/employees/${id}/profile-summary`),
-
-  // === EMS: Attendance ===
-  clockIn: () => api.post('/attendance/clock-in'),
-  clockOut: () => api.post('/attendance/clock-out'),
-  getMyAttendance: (limit) => api.get('/attendance/my', { params: { limit } }),
-  getMySummary: () => api.get('/attendance/my/summary'),
-  listAttendance: (params) => api.get('/attendance', { params }),
-  getPendingAttendance: () => api.get('/attendance/pending'),
-  verifyAttendance: (data) => api.post('/attendance/verify', data),
-  requestCorrection: (data) => api.post('/attendance/correct', data),
-  approveCorrection: (id) => api.put(`/attendance/correct/${id}/approve`),
-  getMonthlyAttendance: (empId, month, year) => api.get(`/attendance/summary/${empId}/${month}/${year}`),
-
-  // === EMS: Leaves ===
-  applyLeave: (data) => api.post('/leaves', data),
-  getMyLeaves: (limit) => api.get('/leaves/my', { params: { limit } }),
-  getMyLeaveBalance: () => api.get('/leaves/balance/my'),
-  listLeaves: (params) => api.get('/leaves', { params }),
-  getEmployeeLeaveBalance: (id) => api.get(`/leaves/balance/${id}`),
-  approveLeave: (id) => api.put(`/leaves/${id}/approve`),
-  rejectLeave: (id, reason) => api.put(`/leaves/${id}/reject`, { reason }),
-
-  // === EMS: Overtime ===
-  logOvertime: (data) => api.post('/overtime', data),
-  listOvertime: (params) => api.get('/overtime', { params }),
-  getMyOvertime: (limit) => api.get('/overtime/my', { params: { limit } }),
-  getEmployeeOvertime: (id, limit) => api.get(`/overtime/${id}`, { params: { limit } }),
-
-  // === EMS: Reports ===
-  getMonthlySummary: (month) => api.get(`/reports/monthly-summary/${month}`),
-  getHoursTrends: (empId, months) => api.get(`/reports/hours-trends/${empId}`, { params: { months } }),
-  getLeaveUsage: (month) => api.get(`/reports/leave-usage/${month}`),
-  getAttendanceRates: (month) => api.get(`/reports/attendance-rates/${month}`),
-  getTargetMissers: (month) => api.get(`/reports/target-missers/${month}`),
-  getOvertimeTracking: (month) => api.get(`/reports/overtime-tracking/${month}`),
-
-  // === Notifications ===
-  getNotifications: () => api.get('/notifications'),
-  markNotificationsRead: () => api.put('/notifications/mark-read'),
-
-  // === Recycle Bin ===
-  getRecycleBin: (collection) => api.get('/recycle-bin', { params: collection ? { collection } : {} }),
-  restoreRecycleItem: (id) => api.post(`/recycle-bin/${id}/restore`),
-  purgeRecycleItem: (id) => api.delete(`/recycle-bin/${id}`),
-
-  // === Customers (admin view) ===
-  listCustomers: () => api.get('/customer/admin/list'),
 };

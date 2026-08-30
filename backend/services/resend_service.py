@@ -3,7 +3,7 @@ import os
 import httpx
 from typing import Optional
 
-RESEND_API_KEY = os.environ["RESEND_API_KEY"]
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL", "onboarding@resend.dev")
 RESEND_FROM_NAME = os.environ.get("RESEND_FROM_NAME", "Axovion AI")
 RESEND_URL = "https://api.resend.com/emails"
@@ -11,6 +11,10 @@ RESEND_URL = "https://api.resend.com/emails"
 
 async def send_email(to: str, subject: str, html: str, from_email: Optional[str] = None) -> dict:
     """Send a single email via Resend. Returns {ok, id, error}."""
+    if not RESEND_API_KEY or RESEND_API_KEY.startswith("mock-"):
+        import uuid
+        return {"ok": True, "id": f"simulated-{uuid.uuid4().hex[:12]}", "error": None}
+
     sender = f"{RESEND_FROM_NAME} <{from_email or RESEND_FROM_EMAIL}>"
     try:
         async with httpx.AsyncClient(timeout=30) as client:

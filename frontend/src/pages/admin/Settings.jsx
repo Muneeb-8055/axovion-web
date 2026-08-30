@@ -1,113 +1,618 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { adminApi } from '../../lib/api';
-import { Save, Settings as SettingsIcon } from 'lucide-react';
+import {
+  Save, RefreshCw, AlertCircle, Loader2,
+  Building2, Mail, Phone, Bot, CheckCircle2,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
-const AdminSettings = () => {
-  const [s, setS] = useState(null);
-  const [saving, setSaving] = useState(false);
+// ---- helpers ---------------------------------------------------------------
 
-  const load = async () => {
-    try { const r = await adminApi.getSettings(); setS(r.data); }
-    catch (e) { toast.error('Failed to load settings'); }
-  };
-  useEffect(() => { load(); }, []);
+function deepEqual(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
 
-  const save = async () => {
-    setSaving(true);
-    try { const r = await adminApi.updateSettings(s); setS(r.data); toast.success('Settings saved'); }
-    catch (e) { toast.error('Save failed'); }
-    finally { setSaving(false); }
-  };
+// ---- Atoms ---------------------------------------------------------------
 
-  if (!s) return <div className="text-[#C0C0C8]/60">Loading…</div>;
-  const f = (k, v) => setS((cur) => ({ ...cur, [k]: v }));
-
+function Label({ htmlFor, text, help }) {
   return (
-    <div className="space-y-6" data-testid="admin-settings-page">
-      <div>
-        <div className="font-mono text-[11px] tracking-[0.18em] uppercase text-[#00D4FF] mb-2">Settings</div>
-        <h1 className="text-white text-2xl md:text-3xl font-extrabold tracking-tight">Configuration</h1>
-      </div>
-
-      <Section title="Business info">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <FormField label="Business name"><input value={s.businessName || ''} onChange={(e) => f('businessName', e.target.value)} data-testid="settings-business-name" className="ax-input" /></FormField>
-          <FormField label="Contact email"><input value={s.contactEmail || ''} onChange={(e) => f('contactEmail', e.target.value)} data-testid="settings-contact-email" className="ax-input" /></FormField>
-          <FormField label="WhatsApp"><input value={s.whatsapp || ''} onChange={(e) => f('whatsapp', e.target.value)} data-testid="settings-whatsapp" className="ax-input" /></FormField>
-          <FormField label="Calendly link"><input value={s.calendlyLink || ''} onChange={(e) => f('calendlyLink', e.target.value)} data-testid="settings-calendly" className="ax-input" /></FormField>
-        </div>
-      </Section>
-
-      <Section title="Email">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <FormField label="From name"><input value={s.emailFromName || ''} onChange={(e) => f('emailFromName', e.target.value)} data-testid="settings-email-from-name" className="ax-input" /></FormField>
-          <FormField label="From address"><input value={s.emailFromAddress || ''} onChange={(e) => f('emailFromAddress', e.target.value)} data-testid="settings-email-from-address" className="ax-input" /></FormField>
-          <FormField label="Auto-send emails"><input type="checkbox" checked={!!s.autoEmailEnabled} onChange={(e) => f('autoEmailEnabled', e.target.checked)} data-testid="settings-auto-email" className="h-5 w-5 accent-[#00D4FF]" /></FormField>
-        </div>
-      </Section>
-
-      <Section title="AI Calling">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <FormField label="Auto-call high-value leads"><input type="checkbox" checked={!!s.autoCallEnabled} onChange={(e) => f('autoCallEnabled', e.target.checked)} data-testid="settings-auto-call" className="h-5 w-5 accent-[#00D4FF]" /></FormField>
-          <FormField label="High-value revenue threshold ($)"><input type="number" value={s.highValueRevenueUsd || 0} onChange={(e) => f('highValueRevenueUsd', Number(e.target.value))} data-testid="settings-revenue-threshold" className="ax-input" /></FormField>
-          <FormField label="High-value budget threshold ($)"><input type="number" value={s.highValueBudgetUsd || 0} onChange={(e) => f('highValueBudgetUsd', Number(e.target.value))} data-testid="settings-budget-threshold" className="ax-input" /></FormField>
-        </div>
-      </Section>
-
-      <Section title="Employee Management">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <FormField label="Monthly target hours per employee">
-            <input
-              type="number"
-              min="1"
-              step="0.5"
-              value={s.monthlyTargetHours ?? 208}
-              onChange={(e) => f('monthlyTargetHours', Number(e.target.value))}
-              className="ax-input"
-            />
-            <span className="block text-[#A0A0B0] text-xs mt-1">
-              Default is 208 hrs (26 working days × 8 hrs). Change this to set a new target for all employees.
-            </span>
-          </FormField>
-        </div>
-      </Section>
-
-      <Section title="Chatbot">
-        <FormField label="System prompt override (optional)">
-          <textarea value={s.chatbotSystemPrompt || ''} onChange={(e) => f('chatbotSystemPrompt', e.target.value)} rows="6" data-testid="settings-chatbot-prompt" className="ax-input" placeholder="Leave blank to use default Axovion AI prompt" />
-        </FormField>
-      </Section>
-
-      <div className="flex justify-end">
-        <button onClick={save} disabled={saving} data-testid="settings-save-button" className="inline-flex items-center gap-2 rounded-[12px] bg-[#F97316] text-[#0A0A0F] px-6 py-3 text-sm font-bold hover:bg-[#FBBF24] disabled:opacity-60">
-          <Save className="h-4 w-4" /> {saving ? 'Saving…' : 'Save changes'}
-        </button>
-      </div>
-
-      <style>{`
-        .ax-input { width: 100%; background: #0A0A0F; border: 1px solid rgba(255,255,255,0.10); border-radius: 10px; padding: 8px 12px; font-size: 14px; color: #FFF; outline: none; }
-        .ax-input:focus { border-color: rgba(0,212,255,0.45); }
-      `}</style>
+    <div style={{ marginBottom: 6 }}>
+      <label
+        htmlFor={htmlFor}
+        style={{ display: 'block', fontSize: 13, color: 'var(--ax-heading)', fontWeight: 500 }}
+      >
+        {text}
+      </label>
+      {help && (
+        <p style={{ fontSize: 11, color: 'var(--ax-muted-2)', marginTop: 3, lineHeight: 1.4 }}>
+          {help}
+        </p>
+      )}
     </div>
   );
+}
+
+const inputBaseStyle = {
+  width: '100%',
+  boxSizing: 'border-box',
+  background: 'var(--ax-bg)',
+  border: '1px solid var(--ax-border)',
+  borderRadius: 'var(--ax-radius-control)',
+  padding: '10px 12px',
+  fontSize: 13,
+  color: 'var(--ax-heading)',
+  fontFamily: 'inherit',
+  outline: 'none',
+  transition: 'border-color var(--ax-duration-fast)',
 };
 
-const Section = ({ title, children }) => (
-  <div className="rounded-[16px] bg-[#12121A] border border-white/10 p-6">
-    <div className="flex items-center gap-2 mb-5">
-      <SettingsIcon className="h-4 w-4 text-[#00D4FF]" />
-      <h2 className="text-white text-lg font-bold">{title}</h2>
+function TextField({ id, value, onChange, placeholder, type = 'text', testId }) {
+  return (
+    <input
+      id={id}
+      type={type}
+      value={value || ''}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      data-testid={testId}
+      style={inputBaseStyle}
+      onFocus={(e) => { e.target.style.borderColor = 'rgba(0,212,255,0.45)'; }}
+      onBlur={(e) => { e.target.style.borderColor = 'var(--ax-border)'; }}
+    />
+  );
+}
+
+function NumberField({ id, value, onChange, testId, min }) {
+  return (
+    <input
+      id={id}
+      type="number"
+      value={value ?? 0}
+      onChange={(e) => onChange(Number(e.target.value))}
+      min={min}
+      data-testid={testId}
+      style={{ ...inputBaseStyle, fontFamily: "'JetBrains Mono', monospace" }}
+      onFocus={(e) => { e.target.style.borderColor = 'rgba(0,212,255,0.45)'; }}
+      onBlur={(e) => { e.target.style.borderColor = 'var(--ax-border)'; }}
+    />
+  );
+}
+
+function TextareaField({ id, value, onChange, rows, placeholder, testId }) {
+  return (
+    <textarea
+      id={id}
+      value={value || ''}
+      onChange={(e) => onChange(e.target.value)}
+      rows={rows}
+      placeholder={placeholder}
+      data-testid={testId}
+      style={{ ...inputBaseStyle, resize: 'vertical', lineHeight: 1.5 }}
+      onFocus={(e) => { e.target.style.borderColor = 'rgba(0,212,255,0.45)'; }}
+      onBlur={(e) => { e.target.style.borderColor = 'var(--ax-border)'; }}
+    />
+  );
+}
+
+function Toggle({ id, checked, onChange, testId }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 44 }}>
+      <button
+        id={id}
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        data-testid={testId}
+        style={{
+          width: 40, height: 22,
+          borderRadius: 'var(--ax-radius-pill)',
+          background: checked ? 'var(--ax-accent)' : 'var(--ax-border-strong)',
+          border: 'none', cursor: 'pointer',
+          position: 'relative',
+          transition: 'background var(--ax-duration-fast)',
+          flexShrink: 0,
+          outline: 'none',
+        }}
+      >
+        <span
+          style={{
+            position: 'absolute',
+            top: 3, left: checked ? 21 : 3,
+            width: 16, height: 16,
+            borderRadius: '50%',
+            background: '#fff',
+            transition: 'left var(--ax-duration-fast)',
+          }}
+        />
+      </button>
+      <span style={{ fontSize: 13, color: checked ? 'var(--ax-text)' : 'var(--ax-muted)' }}>
+        {checked ? 'Enabled' : 'Disabled'}
+      </span>
     </div>
-    {children}
-  </div>
-);
+  );
+}
 
-const FormField = ({ label, children }) => (
-  <label className="block">
-    <span className="block text-white text-sm font-semibold mb-1.5">{label}</span>
-    {children}
-  </label>
-);
+// ---- Section ---------------------------------------------------------------
 
-export default AdminSettings;
+function Section({ icon: Icon, title, children }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add('ax-reveal-in');
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.05 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <section
+      ref={ref}
+      className="ax-reveal"
+      style={{
+        background: 'var(--ax-surface)',
+        border: '1px solid var(--ax-border)',
+        borderRadius: 'var(--ax-radius-panel)',
+        overflow: 'hidden',
+      }}
+    >
+      {/* section header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '14px 20px',
+        borderBottom: '1px solid var(--ax-border)',
+        background: 'var(--ax-bg)',
+      }}>
+        <Icon size={15} strokeWidth={1.5} style={{ color: 'var(--ax-accent)', flexShrink: 0 }} />
+        <h2 style={{ color: 'var(--ax-heading)', fontSize: 13, fontWeight: 600, margin: 0 }}>
+          {title}
+        </h2>
+      </div>
+
+      {/* section body */}
+      <div style={{ padding: '20px' }}>
+        {children}
+      </div>
+    </section>
+  );
+}
+
+// ---- FieldRow ---------------------------------------------------------------
+
+function FieldRow({ label, help, children, wide }) {
+  return (
+    <div style={{ gridColumn: wide ? '1 / -1' : undefined }}>
+      <Label text={label} help={help} />
+      {children}
+    </div>
+  );
+}
+
+// ---- Skeleton ---------------------------------------------------------------
+
+function SettingsSkeleton() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {[4, 3, 3, 2].map((fields, si) => (
+        <div key={si} style={{
+          background: 'var(--ax-surface)',
+          border: '1px solid var(--ax-border)',
+          borderRadius: 'var(--ax-radius-panel)',
+          overflow: 'hidden',
+        }}>
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--ax-border)', background: 'var(--ax-bg)' }}>
+            <div className="skel" style={{ width: 120, height: 14, borderRadius: 4 }} />
+          </div>
+          <div style={{ padding: 20, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20 }}>
+            {Array.from({ length: fields }).map((_, i) => (
+              <div key={i}>
+                <div className="skel" style={{ width: 90, height: 12, borderRadius: 4, marginBottom: 8 }} />
+                <div className="skel" style={{ width: '100%', height: 40, borderRadius: 'var(--ax-radius-control)' }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---- Main ---------------------------------------------------------------
+
+export default function AdminSettings() {
+  const [saved, setSaved] = useState(null);   // last confirmed server state
+  const [form, setForm] = useState(null);     // live form state
+  const [loadStatus, setLoadStatus] = useState('loading'); // loading | error | ok
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoadStatus('loading');
+    try {
+      const r = await adminApi.getSettings();
+      setSaved(r.data);
+      setForm(r.data);
+      setLoadStatus('ok');
+    } catch {
+      setLoadStatus('error');
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const set = useCallback((key, value) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    setSaveSuccess(false);
+  }, []);
+
+  const isDirty = form && saved && !deepEqual(form, saved);
+
+  const handleSave = async () => {
+    if (!form) return;
+    setSaving(true);
+    setSaveSuccess(false);
+    try {
+      const r = await adminApi.updateSettings(form);
+      setSaved(r.data);
+      setForm(r.data);
+      setSaveSuccess(true);
+      toast.success('Settings saved');
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch {
+      toast.error('Save failed. Your changes are still unsaved.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDiscard = () => {
+    setForm(saved);
+    setSaveSuccess(false);
+  };
+
+  const gridStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+    gap: 20,
+  };
+
+  return (
+    <>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .skel { background: linear-gradient(90deg, var(--ax-surface) 0%, var(--ax-surface-2) 50%, var(--ax-surface) 100%); background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+      `}</style>
+
+      <div data-testid="admin-settings-page" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+        {/* header */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <div className="ax-mono-label" style={{ marginBottom: 6 }}>Settings</div>
+            <h1 style={{ color: 'var(--ax-heading)', fontSize: 22, fontWeight: 700, margin: 0, letterSpacing: '-0.01em' }}>
+              Configuration
+            </h1>
+          </div>
+
+          {loadStatus === 'ok' && (
+            <button
+              onClick={load}
+              aria-label="Reload settings from server"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                fontSize: 13, color: 'var(--ax-muted)',
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: '8px 10px', borderRadius: 'var(--ax-radius-control)', minHeight: 44,
+                transition: 'color var(--ax-duration-fast)',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--ax-heading)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ax-muted)'; }}
+            >
+              <RefreshCw size={13} strokeWidth={1.5} />
+              Reload
+            </button>
+          )}
+        </div>
+
+        {/* unsaved-changes banner */}
+        {isDirty && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            flexWrap: 'wrap', gap: 12,
+            background: 'rgba(251,191,36,0.08)',
+            border: '1px solid rgba(251,191,36,0.22)',
+            borderRadius: 'var(--ax-radius-control)',
+            padding: '12px 16px',
+          }}>
+            <p style={{ fontSize: 13, color: 'var(--ax-warn)', margin: 0, fontWeight: 500 }}>
+              You have unsaved changes.
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={handleDiscard}
+                style={{
+                  fontSize: 12, color: 'var(--ax-muted)',
+                  background: 'none', border: '1px solid var(--ax-border)',
+                  borderRadius: 'var(--ax-radius-control)',
+                  padding: '6px 12px', cursor: 'pointer', minHeight: 36,
+                }}
+              >
+                Discard
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                data-testid="settings-save-button"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  fontSize: 12, color: 'var(--ax-on-accent)',
+                  background: 'var(--ax-accent)',
+                  border: 'none', borderRadius: 'var(--ax-radius-control)',
+                  padding: '6px 14px', cursor: saving ? 'wait' : 'pointer',
+                  opacity: saving ? 0.65 : 1, minHeight: 36,
+                  fontWeight: 600,
+                }}
+              >
+                {saving
+                  ? <Loader2 size={12} strokeWidth={1.5} style={{ animation: 'spin 0.8s linear infinite' }} />
+                  : <Save size={12} strokeWidth={1.5} />
+                }
+                {saving ? 'Saving...' : 'Save now'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* save-success confirmation */}
+        {saveSuccess && !isDirty && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: 'rgba(16,185,129,0.08)',
+            border: '1px solid rgba(16,185,129,0.22)',
+            borderRadius: 'var(--ax-radius-control)',
+            padding: '12px 16px',
+          }}>
+            <CheckCircle2 size={14} strokeWidth={1.5} style={{ color: 'var(--ax-success)', flexShrink: 0 }} />
+            <p style={{ fontSize: 13, color: 'var(--ax-success)', margin: 0, fontWeight: 500 }}>
+              Settings saved successfully.
+            </p>
+          </div>
+        )}
+
+        {/* loading skeleton */}
+        {loadStatus === 'loading' && <SettingsSkeleton />}
+
+        {/* error */}
+        {loadStatus === 'error' && (
+          <div style={{
+            background: 'var(--ax-surface)',
+            border: '1px solid var(--ax-border)',
+            borderRadius: 'var(--ax-radius-panel)',
+            padding: '48px 24px',
+            textAlign: 'center',
+          }}>
+            <AlertCircle size={28} strokeWidth={1.5} style={{ color: 'var(--ax-error)', marginBottom: 12 }} />
+            <p style={{ color: 'var(--ax-heading)', fontWeight: 600, marginBottom: 6 }}>Could not load settings</p>
+            <p style={{ color: 'var(--ax-muted)', fontSize: 13, marginBottom: 20 }}>
+              The server may be unavailable. Check your connection and try again.
+            </p>
+            <button
+              onClick={load}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: 'var(--ax-surface-2)', border: '1px solid var(--ax-border-strong)',
+                borderRadius: 'var(--ax-radius-control)', color: 'var(--ax-heading)',
+                padding: '10px 18px', fontSize: 13, fontWeight: 500, cursor: 'pointer', minHeight: 44,
+              }}
+            >
+              <RefreshCw size={13} strokeWidth={1.5} /> Retry
+            </button>
+          </div>
+        )}
+
+        {/* form sections */}
+        {loadStatus === 'ok' && form && (
+          <>
+            {/* Business info */}
+            <Section icon={Building2} title="Business info">
+              <div style={gridStyle}>
+                <FieldRow label="Business name">
+                  <TextField
+                    id="businessName"
+                    value={form.businessName}
+                    onChange={(v) => set('businessName', v)}
+                    placeholder="Axovion Ltd."
+                    testId="settings-business-name"
+                  />
+                </FieldRow>
+                <FieldRow label="Contact email">
+                  <TextField
+                    id="contactEmail"
+                    type="email"
+                    value={form.contactEmail}
+                    onChange={(v) => set('contactEmail', v)}
+                    placeholder="hello@example.com"
+                    testId="settings-contact-email"
+                  />
+                </FieldRow>
+                <FieldRow label="WhatsApp number" help="Include country code, e.g. +447911123456">
+                  <TextField
+                    id="whatsapp"
+                    value={form.whatsapp}
+                    onChange={(v) => set('whatsapp', v)}
+                    placeholder="+1 555 000 0000"
+                    testId="settings-whatsapp"
+                  />
+                </FieldRow>
+                <FieldRow label="Calendly link" help="Paste the full booking page URL">
+                  <TextField
+                    id="calendlyLink"
+                    type="url"
+                    value={form.calendlyLink}
+                    onChange={(v) => set('calendlyLink', v)}
+                    placeholder="https://calendly.com/you/30min"
+                    testId="settings-calendly"
+                  />
+                </FieldRow>
+              </div>
+            </Section>
+
+            {/* Email */}
+            <Section icon={Mail} title="Email">
+              <div style={gridStyle}>
+                <FieldRow label="From name" help="Shown in the recipient's inbox">
+                  <TextField
+                    id="emailFromName"
+                    value={form.emailFromName}
+                    onChange={(v) => set('emailFromName', v)}
+                    placeholder="Axovion Team"
+                    testId="settings-email-from-name"
+                  />
+                </FieldRow>
+                <FieldRow label="From address" help="Must be a verified sender in Resend">
+                  <TextField
+                    id="emailFromAddress"
+                    type="email"
+                    value={form.emailFromAddress}
+                    onChange={(v) => set('emailFromAddress', v)}
+                    placeholder="noreply@example.com"
+                    testId="settings-email-from-address"
+                  />
+                </FieldRow>
+                <FieldRow
+                  label="Auto-send emails"
+                  help="When on, the system sends follow-up emails automatically after each audit submission."
+                  wide
+                >
+                  <Toggle
+                    id="autoEmailEnabled"
+                    checked={!!form.autoEmailEnabled}
+                    onChange={(v) => set('autoEmailEnabled', v)}
+                    testId="settings-auto-email"
+                  />
+                </FieldRow>
+              </div>
+            </Section>
+
+            {/* AI Calling */}
+            <Section icon={Phone} title="AI Calling">
+              <div style={gridStyle}>
+                <FieldRow
+                  label="Auto-call high-value leads"
+                  help="Triggers an outbound AI call when a new lead exceeds the thresholds below."
+                  wide
+                >
+                  <Toggle
+                    id="autoCallEnabled"
+                    checked={!!form.autoCallEnabled}
+                    onChange={(v) => set('autoCallEnabled', v)}
+                    testId="settings-auto-call"
+                  />
+                </FieldRow>
+                <FieldRow
+                  label="Revenue threshold (USD)"
+                  help="Leads with reported revenue above this amount qualify for auto-call."
+                >
+                  <NumberField
+                    id="highValueRevenueUsd"
+                    value={form.highValueRevenueUsd}
+                    onChange={(v) => set('highValueRevenueUsd', v)}
+                    min={0}
+                    testId="settings-revenue-threshold"
+                  />
+                </FieldRow>
+                <FieldRow
+                  label="Budget threshold (USD)"
+                  help="Leads with a stated budget above this amount also qualify."
+                >
+                  <NumberField
+                    id="highValueBudgetUsd"
+                    value={form.highValueBudgetUsd}
+                    onChange={(v) => set('highValueBudgetUsd', v)}
+                    min={0}
+                    testId="settings-budget-threshold"
+                  />
+                </FieldRow>
+              </div>
+            </Section>
+
+            {/* Chatbot */}
+            <Section icon={Bot} title="Chatbot">
+              <FieldRow
+                label="System prompt override"
+                help="Leave blank to use the default Axovion AI prompt. Override only if you need to restrict topics or add company-specific context."
+                wide
+              >
+                <TextareaField
+                  id="chatbotSystemPrompt"
+                  value={form.chatbotSystemPrompt}
+                  onChange={(v) => set('chatbotSystemPrompt', v)}
+                  rows={6}
+                  placeholder="You are an assistant for Axovion..."
+                  testId="settings-chatbot-prompt"
+                />
+              </FieldRow>
+            </Section>
+
+            {/* bottom save bar */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10,
+              paddingBottom: 8,
+            }}>
+              {isDirty && (
+                <button
+                  onClick={handleDiscard}
+                  style={{
+                    fontSize: 13, color: 'var(--ax-muted)',
+                    background: 'none', border: '1px solid var(--ax-border)',
+                    borderRadius: 'var(--ax-radius-control)',
+                    padding: '10px 18px', cursor: 'pointer', minHeight: 44,
+                    transition: 'color var(--ax-duration-fast)',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--ax-heading)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ax-muted)'; }}
+                >
+                  Discard changes
+                </button>
+              )}
+
+              <button
+                onClick={handleSave}
+                disabled={saving || !isDirty}
+                data-testid="settings-save-button"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  background: isDirty ? 'var(--ax-accent)' : 'var(--ax-surface-2)',
+                  color: isDirty ? 'var(--ax-on-accent)' : 'var(--ax-muted)',
+                  border: isDirty ? 'none' : '1px solid var(--ax-border)',
+                  borderRadius: 'var(--ax-radius-control)',
+                  padding: '11px 22px', fontSize: 13, fontWeight: 600,
+                  cursor: saving ? 'wait' : isDirty ? 'pointer' : 'default',
+                  opacity: saving ? 0.65 : 1, minHeight: 44,
+                  transition: 'background var(--ax-duration-fast), color var(--ax-duration-fast)',
+                }}
+              >
+                {saving
+                  ? <Loader2 size={14} strokeWidth={1.5} style={{ animation: 'spin 0.8s linear infinite' }} />
+                  : saveSuccess && !isDirty
+                    ? <CheckCircle2 size={14} strokeWidth={1.5} />
+                    : <Save size={14} strokeWidth={1.5} />
+                }
+                {saving ? 'Saving...' : 'Save changes'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </>
+  );
+}

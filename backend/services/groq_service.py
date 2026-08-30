@@ -4,15 +4,15 @@ import json
 import httpx
 from typing import List, Dict, Any, Optional
 
-GROQ_API_KEY = os.environ["GROQ_API_KEY"]
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 CHATBOT_SYSTEM_PROMPT = """You are Axovion AI, the chatbot for Axovion.io — a premium AI automation agency that builds ROI-focused AI agents for businesses.
 
 ABOUT AXOVION:
-- We build AI agents that automate: customer support, lead follow-up, booking, e-commerce workflows, and abandoned cart recovery
-- Services: Free AI Audit, Customer Support Chatbots (web + WhatsApp), Lead Gen & Follow-up, Booking Automation, E-commerce Support, AI Consulting
+- We build AI agents that automate: customer support, lead follow-up, booking, e-commerce workflows, abandoned cart recovery, CRM & email automation
+- Services: Free AI Audit, Customer Support Chatbots (web + WhatsApp), Lead Gen & Follow-up, Booking Automation, E-commerce Support, CRM & Email Automation, AI Consulting
 - Implementation: days to weeks, not quarters
 - ROI-focused — we don't build tech-for-tech
 - 100+ demos delivered, 2+ years building AI
@@ -43,6 +43,59 @@ async def chat_complete(
     json_mode: bool = False,
 ) -> str:
     """Single chat completion call."""
+    if not GROQ_API_KEY or GROQ_API_KEY.startswith("mock-"):
+        if json_mode:
+            return json.dumps({
+                "executive_summary": "Axovion AI automation assessment shows strong potential for high-ROI operational efficiency and labor cost reduction.",
+                "opportunities": [
+                    {
+                        "title": "Automate Customer Support Inquiries",
+                        "description": "Deploy an AI chatbot to handle 70%+ of tier-1 customer inquiries instantly across web and messaging channels.",
+                        "estimated_hours_saved_per_month": 45,
+                        "monthly_savings_usd": 1800,
+                        "priority": "high"
+                    },
+                    {
+                        "title": "Lead Qualification & Follow-Up",
+                        "description": "Automated inbound lead capture, qualification, and instant CRM sync with smart notifications.",
+                        "estimated_hours_saved_per_month": 30,
+                        "monthly_savings_usd": 1500,
+                        "priority": "high"
+                    },
+                    {
+                        "title": "Appointment & Booking Coordination",
+                        "description": "Self-service conversational scheduling linked with calendar availability.",
+                        "estimated_hours_saved_per_month": 20,
+                        "monthly_savings_usd": 800,
+                        "priority": "medium"
+                    }
+                ],
+                "total_monthly_savings_usd": 4100,
+                "total_hours_saved_per_month": 95,
+                "recommended_agents": [
+                    {
+                        "name": "24/7 Support Chatbot",
+                        "description": "Multi-channel assistant that handles customer FAQs and lead routing.",
+                        "setup_cost_estimate_usd": 2500,
+                        "implementation_days": 10
+                    },
+                    {
+                        "name": "Lead Nurture AI Agent",
+                        "description": "Engages inbound prospects, collects requirements, and schedules strategy calls.",
+                        "setup_cost_estimate_usd": 3000,
+                        "implementation_days": 14
+                    }
+                ],
+                "workflow_map": [
+                    {"step": 1, "title": "Capture & Ingest", "description": "Customer submits inquiry or message."},
+                    {"step": 2, "title": "AI Classification", "description": "Intent and urgency analyzed in real time."},
+                    {"step": 3, "title": "Automated Resolution", "description": "Knowledge-based answer delivered or escalation routed to team."}
+                ],
+                "implementation_timeline_days": 14,
+                "priority_ranking": ["Automate Customer Support Inquiries", "Lead Qualification & Follow-Up", "Appointment & Booking Coordination"]
+            })
+        return "Hello! I am Axovion AI, your automation consultant. How can we help streamline and automate your business operations today?"
+
     msg_list = []
     if system_prompt:
         msg_list.append({"role": "system", "content": system_prompt})

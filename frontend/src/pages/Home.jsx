@@ -1,14 +1,25 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import {
-  ArrowRight, ShieldCheck, Clock, TrendingUp, Users, Quote, Sparkles, ChevronRight,
-  ClipboardCheck, MessageSquare, Zap, CalendarClock, ShoppingCart, PackageSearch, MailPlus, Compass, BrainCircuit, BarChart3,
+  ClipboardCheck, MessageSquare, Zap, CalendarClock,
+  ShoppingCart, PackageSearch, MailPlus, Compass, ArrowUpRight,
 } from 'lucide-react';
-import { AuroraBg } from '../components/AuroraBg';
-import { SplitText } from '../components/SplitText';
+import { ScrollWorld } from '../components/ScrollWorld';
 import { SERVICES, TESTIMONIALS } from '../lib/content';
 import { useScrollReveal } from '../lib/hooks';
+import { worldUrl } from '../lib/assetUrl';
+
+/* ---------------------------------------------------------------------------
+   content.js carries a couple of raw HTML entities and long dashes from the
+   old copy deck. Nothing user visible on this page is allowed either, so every
+   string that comes out of content.js is passed through here first.
+   --------------------------------------------------------------------------- */
+const clean = (value) =>
+  String(value)
+    .replace(/&amp;/g, '&')
+    .replace(/\s*[—–]\s*/g, '. ')
+    .replace(/\.\s+([a-z])/g, (_m, c) => `. ${c.toUpperCase()}`);
 
 const Reveal = ({ children, className = '', delay = 0 }) => {
   const ref = useScrollReveal();
@@ -19,449 +30,374 @@ const Reveal = ({ children, className = '', delay = 0 }) => {
   );
 };
 
-const PROBLEMS = [
-  { icon: Clock, title: 'Slow support response', desc: 'Customers wait hours — sometimes days — for basic answers.' },
-  { icon: Users, title: 'Leads slipping away', desc: 'Manual follow-up means most leads go cold within 48h.' },
-  { icon: BrainCircuit, title: 'Repetitive work eating hours', desc: 'Your team spends 30-60% of the week on tasks AI can handle.' },
-  { icon: BarChart3, title: 'Competitors scaling with AI', desc: 'You\'re hiring; they\'re deploying agents. The gap widens daily.' },
+const H2 = 'text-[30px] md:text-[46px] font-semibold leading-[1.06] tracking-[-0.03em]';
+
+/* ---------------------------------------------------------------------------
+   The five beats of the scroll cinematic.
+   Order is fixed: backlog, audit, build, deployment, result. Connector N
+   bridges dive N to dive N+1 and the seams are already frame matched.
+   --------------------------------------------------------------------------- */
+const SCENES = [
+  {
+    id: 'backlog',
+    label: 'Backlog',
+    eyebrow: 'The backlog',
+    title: 'The queue never gets to zero',
+    body: 'Tickets wait hours for a first reply. Leads go cold inside 48 hours. Somewhere between 30 and 60 percent of the week disappears into work nobody chose to do.',
+    still: '/world/img/dive1.webp',
+    clip: '/world/vid/dive1.mp4',
+    clipMobile: '/world/vid/dive1-m.mp4',
+    alt: 'Miniature model of an operations floor at night, stacked with ticket trays, a ringing phone and a whiteboard full of unfinished work.',
+    scroll: 1.4,
+    linger: 0.35,
+  },
+  {
+    id: 'audit',
+    label: 'Audit',
+    eyebrow: 'The audit',
+    title: 'Measure it before you automate it',
+    body: 'The free AI Audit maps every workflow, scores what can actually be automated, and puts a monthly savings figure beside each one. It comes back within 24 hours.',
+    still: '/world/img/dive2.webp',
+    clip: '/world/vid/dive2.mp4',
+    clipMobile: '/world/vid/dive2-m.mp4',
+    alt: 'Miniature model of a diagnostic room where scanning rigs measure the ticket trays and a technician traces a workflow across a readout.',
+    scroll: 1.25,
+    linger: 0.35,
+  },
+  {
+    id: 'build',
+    label: 'Build',
+    eyebrow: 'The build',
+    title: 'Agents built for your workflow',
+    body: 'No general purpose assistant. Each agent is trained on your knowledge base, wired into the process it runs, and tested against real tickets before it goes near a customer.',
+    still: '/world/img/dive3.webp',
+    clip: '/world/vid/dive3.mp4',
+    clipMobile: '/world/vid/dive3-m.mp4',
+    alt: 'Miniature model of a workshop where agents are assembled on modular racks, with cabling running back to a central spine.',
+    scroll: 1.25,
+    linger: 0.35,
+  },
+  {
+    id: 'deployment',
+    label: 'Deploy',
+    eyebrow: 'The deployment',
+    title: 'Plugged into what you already run',
+    body: 'Agents connect to HubSpot, Salesforce, Pipedrive, Gorgias, Zendesk, Intercom, Shopify, WhatsApp and your calendar. Most are live in about two weeks. You keep the keys and the configs.',
+    still: '/world/img/dive4.webp',
+    clip: '/world/vid/dive4.mp4',
+    clipMobile: '/world/vid/dive4-m.mp4',
+    alt: 'Miniature model of an integration hub where finished agents slot into conveyor lines feeding inboxes, calendars and CRM terminals.',
+    scroll: 1.25,
+    linger: 0.35,
+  },
+  {
+    id: 'result',
+    label: 'Result',
+    eyebrow: 'The result',
+    title: 'Quiet operations by morning',
+    body: 'On the e-commerce build, 82 percent of tickets now resolve without a person and replies land in about two minutes. The team spends its week on growth instead.',
+    still: '/world/img/dive5.webp',
+    clip: '/world/vid/dive5.mp4',
+    clipMobile: '/world/vid/dive5-m.mp4',
+    alt: 'Miniature model of a calm operations floor at dawn, ticket trays empty and one operator watching a wall of green readouts.',
+    scroll: 1.4,
+    linger: 0.3,
+    cta: {
+      primary: { label: 'Start Free AI Audit', href: '/audit' },
+      secondary: { label: 'Book a Call', href: '/contact' },
+    },
+  },
+];
+
+const CONNECTORS = [
+  '/world/vid/conn1.mp4',
+  '/world/vid/conn2.mp4',
+  '/world/vid/conn3.mp4',
+  '/world/vid/conn4.mp4',
+];
+
+const CONNECTORS_MOBILE = [
+  '/world/vid/conn1-m.mp4',
+  '/world/vid/conn2-m.mp4',
+  '/world/vid/conn3-m.mp4',
+  '/world/vid/conn4-m.mp4',
+];
+
+/* Figures below are the ones the audits keep producing, taken from the
+   e-commerce, real estate and clinic engagements already on the site. */
+const COST_STATS = [
+  { value: '14h', label: 'Average first reply on the support desk we later automated, now about two minutes.' },
+  { value: '48h', label: 'How long an unworked lead usually takes to go cold when follow-up is manual.' },
+  { value: '30-60%', label: 'Share of the working week a typical team spends on tasks an agent can run.' },
+  { value: '30%', label: 'No-show rate at a multi-location clinic before automated reminders and rescheduling.' },
 ];
 
 const TRUST_ITEMS = [
-  { icon: Sparkles, label: 'AI agents in our own ops' },
-  { icon: ClipboardCheck, label: 'Daily AI content system' },
-  { icon: ShieldCheck, label: '2+ years building AI' },
-  { icon: TrendingUp, label: '100+ demos delivered' },
-  { icon: BrainCircuit, label: 'Powered by Kimi K2.6 + Llama 3.3' },
-  { icon: BarChart3, label: 'ROI-focused, not tech-for-tech' },
+  'We run these agents inside our own operations before we sell them.',
+  'A daily AI content system that publishes without a human edit.',
+  'Two years and more than a hundred delivered demos behind the playbook.',
+  'Built on Kimi K2.6 and Llama 3.3, chosen per workflow rather than per trend.',
+  'Every agent ships with a tracked return. If it saves nothing, we do not build it.',
+  'You own what we build. Keys, configs and documentation are handed over.',
 ];
 
-const BentoCard = ({ children, span, glow, dataTestId, to }) => {
-  const ref = useRef(null);
-  const onMove = (e) => {
-    const el = ref.current; if (!el) return;
-    const r = el.getBoundingClientRect();
-    el.style.setProperty('--mx', `${e.clientX - r.left}px`);
-    el.style.setProperty('--my', `${e.clientY - r.top}px`);
-  };
-  const inner = (
-    <div
-      ref={ref}
-      onMouseMove={onMove}
-      data-testid={dataTestId}
-      className={`ax-bento-card group ${span} rounded-[16px] bg-[#12121A] border border-white/10 p-6 transition-[transform,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-[#00D4FF]/35 ${glow ? 'hover:shadow-[0_0_0_1px_rgba(0,212,255,0.22),0_0_28px_rgba(0,212,255,0.14)]' : ''}`}
-    >
-      {children}
-    </div>
-  );
-  if (to) return <Link to={to} className="block h-full">{inner}</Link>;
-  return inner;
-};
-
 const ICON_MAP = {
-  ClipboardCheck, MessageSquare, Zap, CalendarClock, ShoppingCart, PackageSearch, MailPlus, Compass, MessageSquareBot: MessageSquare,
+  ClipboardCheck,
+  MessageSquareBot: MessageSquare,
+  Zap,
+  CalendarClock,
+  ShoppingCart,
+  PackageSearch,
+  MailPlus,
+  Compass,
 };
 
 const Home = () => {
+  const [featured, ...others] = TESTIMONIALS;
+
   return (
     <>
       <Helmet>
-        <title>Axovion.io | AI Automation Agency — Automate to Win</title>
+        <title>Axovion.io | AI Automation Agency, Automate to Win</title>
         <meta name="description" content="Axovion.io builds ROI-focused AI agents that automate customer support, lead follow-up, booking, and repetitive business workflows. Get your free AI Audit." />
         <meta property="og:title" content="Axovion.io | AI Automation Agency" />
         <meta property="og:description" content="Automate repetitive workflows in days, not quarters." />
+        {/* LCP hint for the first poster. Routed through worldUrl so it points at the
+            CDN when one is configured. Deliberately no crossOrigin attribute: the
+            <img> loads without CORS, and a mismatched preload mode is ignored and
+            refetched. */}
+        <link rel="preload" as="image" type="image/webp" href={worldUrl('/world/img/dive1.webp')} />
       </Helmet>
 
-      {/* HERO */}
-      <section className="relative overflow-hidden bg-[#0A0A0F]" data-testid="home-hero">
-        <AuroraBg />
-        <div className="relative ax-container pt-16 md:pt-24 pb-20 md:pb-[120px]">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-            <div className="lg:col-span-7">
-              <div className="inline-flex items-center gap-2 rounded-full bg-[#12121A] border border-white/10 px-3 py-1.5 mb-6">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#10B981] shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-[#C0C0C8]/80">100+ demos delivered</span>
-              </div>
-              <SplitText
-                text={'Automate repetitive workflows\nin days, not quarters.'}
-                as="h1"
-                dataTestId="hero-headline"
-                className="font-extrabold text-white text-[40px] md:text-[72px] leading-[1.05] md:leading-[0.95] tracking-[-0.03em] md:tracking-[-0.04em]"
-              />
-              <p className="mt-6 max-w-[58ch] text-[#C0C0C8]/80 text-base md:text-lg leading-relaxed" data-testid="hero-subcopy">
-                Axovion.io builds ROI-focused AI agents that automate customer support, lead follow-up, booking, e-commerce, and the repetitive tasks eating your team's hours.
-              </p>
-              <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                <Link
-                  to="/audit"
-                  data-testid="hero-primary-cta-button"
-                  className="inline-flex items-center justify-center gap-2 rounded-[12px] bg-[#F97316] text-[#0A0A0F] px-6 py-3.5 text-sm font-bold transition-colors duration-200 hover:bg-[#FBBF24] ax-cta-pulse"
-                >
-                  Start Free AI Audit <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link
-                  to="/contact"
-                  data-testid="hero-secondary-cta-button"
-                  className="inline-flex items-center justify-center gap-2 rounded-[12px] bg-[#12121A] text-white px-6 py-3.5 text-sm font-semibold border border-white/15 transition-colors duration-200 hover:border-[#00D4FF]/45"
-                >
-                  Book a Call
-                </Link>
-              </div>
-              <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-[#C0C0C8]/55">Powered by</span>
-                  <span className="text-sm text-white font-semibold">Kimi K2.6 · Llama 3.3</span>
-                </div>
-                <div className="flex items-center gap-2 text-[#C0C0C8]/55">
-                  <span className="h-1 w-1 rounded-full bg-[#C0C0C8]/40" />
-                </div>
-                <div className="text-sm text-[#C0C0C8]/80">2+ years building AI · 100+ demos</div>
-              </div>
-            </div>
-
-            {/* Hero signal panel */}
-            <div className="lg:col-span-5" data-testid="hero-signal-panel">
-              <div className="rounded-[16px] bg-[#12121A] border border-white/10 p-5 md:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.45)]">
-                <div className="flex items-center justify-between mb-5">
-                  <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-[#C0C0C8]/55">Audit Snapshot</div>
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-[#10B981]/12 border border-[#10B981]/25 px-2.5 py-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
-                    <span className="font-mono text-[10px] uppercase tracking-widest text-[#10B981]">Live</span>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <Metric label="Cycle time" value="-62%" hint="vs manual" />
-                  <Metric label="Cost leak" value="$12K/mo" hint="recovered" />
-                  <Metric label="Automation" value="78/100" hint="score" />
-                </div>
-                <Sparkline />
-                <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between">
-                  <div className="font-mono text-[10px] uppercase tracking-widest text-[#C0C0C8]/55">Lead score</div>
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-[#EF4444]/12 border border-[#EF4444]/25 px-2.5 py-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#EF4444]" />
-                    <span className="font-mono text-[10px] uppercase tracking-widest text-[#EF4444]">Hot</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* PROBLEM */}
-      <section className="ax-section bg-[#0A0A0F]" data-testid="home-problem-section">
-        <div className="ax-container">
-          <Reveal>
-            <div className="max-w-2xl">
-              <div className="font-mono text-[11px] tracking-[0.18em] uppercase text-[#00D4FF] mb-3">The problem</div>
-              <h2 className="text-white text-[32px] md:text-[48px] leading-[1.1] md:leading-[1.05] tracking-[-0.02em] md:tracking-[-0.03em] font-extrabold">
-                Still doing work that AI should handle?
-              </h2>
-              <p className="mt-4 text-[#C0C0C8]/75 text-base md:text-lg max-w-2xl">
-                If any of these sound familiar, you're leaving money on the table every single day.
-              </p>
-            </div>
-          </Reveal>
-          <div className="mt-10 md:mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {PROBLEMS.map((p, i) => (
-              <Reveal key={p.title} delay={i * 60}>
-                <div
-                  className="h-full rounded-[16px] bg-[#12121A] border border-white/10 p-6 transition-[transform,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-[#00D4FF]/30"
-                  data-testid={`problem-card-${i}`}
-                >
-                  <div className="h-10 w-10 rounded-[12px] bg-[#00D4FF]/10 border border-[#00D4FF]/25 inline-flex items-center justify-center mb-4">
-                    <p.icon className="h-5 w-5 text-[#00D4FF]" />
-                  </div>
-                  <h3 className="text-white text-lg font-bold mb-2">{p.title}</h3>
-                  <p className="text-[#C0C0C8]/70 text-sm leading-relaxed">{p.desc}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* SERVICES BENTO */}
-      <section className="ax-section bg-[#0A0A0F]" data-testid="services-bento-section">
-        <div className="ax-container">
-          <Reveal>
-            <div className="max-w-3xl">
-              <div className="font-mono text-[11px] tracking-[0.18em] uppercase text-[#00D4FF] mb-3">Services</div>
-              <h2 className="text-white text-[32px] md:text-[48px] leading-[1.1] md:leading-[1.05] tracking-[-0.02em] md:tracking-[-0.03em] font-extrabold">
-                AI agents that run your business 24/7
-              </h2>
-              <p className="mt-4 text-[#C0C0C8]/75 text-base md:text-lg">
-                Pre-built, production-grade agents for the workflows that are killing your margin and your weekends.
-              </p>
-            </div>
-          </Reveal>
-          <div className="mt-10 md:mt-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {/* Large hero card - full width on mobile, 2 cols on md, 2 cols on lg */}
-            <BentoCard span="md:col-span-2 lg:col-span-2 min-h-[280px] lg:min-h-[360px]" glow dataTestId="services-bento-card-audit" to="/audit">
-              <div className="h-full flex flex-col justify-between">
-                <div>
-                  <div className="inline-flex items-center gap-2 mb-3">
-                    <div className="h-9 w-9 rounded-[10px] bg-[#F97316]/12 border border-[#F97316]/30 inline-flex items-center justify-center">
-                      <ClipboardCheck className="h-5 w-5 text-[#F97316]" />
-                    </div>
-                    <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-[#FBBF24]">Most popular</span>
-                  </div>
-                  <h3 className="text-white text-2xl md:text-3xl font-extrabold tracking-tight">Free AI Audit</h3>
-                  <p className="mt-3 text-[#C0C0C8]/75 text-sm md:text-base max-w-md">
-                    Submit your business once. Get a custom automation map, ROI estimate, and recommended agents — delivered in minutes.
-                  </p>
-                </div>
-                <div className="mt-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-                  <div className="grid grid-cols-3 gap-3 max-w-md w-full">
-                    <KPI label="Map" value="3-5" hint="opportunities" />
-                    <KPI label="ROI" value="$" hint="estimated" />
-                    <KPI label="ETA" value="~30s" hint="AI generated" />
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-[#00D4FF] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                </div>
-              </div>
-            </BentoCard>
-
-            {/* Chatbots card */}
-            <BentoCard span="min-h-[180px]" glow dataTestId="services-bento-card-chatbots" to="/services">
-              <div className="h-full flex flex-col justify-between">
-                <div>
-                  <MessageSquare className="h-7 w-7 text-[#00D4FF] mb-3" />
-                  <h3 className="text-white text-lg font-bold">Customer Support Chatbots</h3>
-                  <p className="mt-2 text-[#C0C0C8]/70 text-sm">Web, WhatsApp, and custom channel agents. Handle 70-90% of tickets.</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-[#00D4FF] mt-3 opacity-50 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </BentoCard>
-
-            {/* Lead Gen card */}
-            <BentoCard span="min-h-[180px]" glow dataTestId="services-bento-card-lead" to="/services">
-              <div className="h-full flex flex-col justify-between">
-                <div>
-                  <Zap className="h-7 w-7 text-[#00D4FF] mb-3" />
-                  <h3 className="text-white text-lg font-bold">Lead Generation &amp; Follow-Up</h3>
-                  <p className="mt-2 text-[#C0C0C8]/70 text-sm">Capture, qualify, follow up across channels — never miss a lead again.</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-[#00D4FF] mt-3 opacity-50 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </BentoCard>
-
-            {/* Booking card */}
-            <BentoCard span="min-h-[180px]" glow dataTestId="services-bento-card-booking" to="/services">
-              <div className="h-full flex flex-col justify-between">
-                <div>
-                  <CalendarClock className="h-7 w-7 text-[#00D4FF] mb-3" />
-                  <h3 className="text-white text-lg font-bold">Booking Automation</h3>
-                  <p className="mt-2 text-[#C0C0C8]/70 text-sm">Bookings, reminders, no-show recovery — all hands-off.</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-[#00D4FF] mt-3 opacity-50 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </BentoCard>
-
-            {/* E-Commerce card */}
-            <BentoCard span="min-h-[180px]" glow dataTestId="services-bento-card-ecom" to="/services">
-              <div className="h-full flex flex-col justify-between">
-                <div>
-                  <ShoppingCart className="h-7 w-7 text-[#00D4FF] mb-3" />
-                  <h3 className="text-white text-lg font-bold">E-Commerce Support</h3>
-                  <p className="mt-2 text-[#C0C0C8]/70 text-sm">Orders, returns, recommendations, abandoned cart recovery.</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-[#00D4FF] mt-3 opacity-50 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </BentoCard>
-          </div>
-          <div className="mt-8 flex justify-center">
-            <Link to="/services" data-testid="services-bento-see-all-link" className="inline-flex items-center gap-2 text-sm text-[#C0C0C8] hover:text-white transition-colors duration-200">
-              See all services <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* HOW IT WORKS — SVG FLOW */}
-      <section className="ax-section bg-[#0A0A0F]" data-testid="how-it-works-section">
-        <div className="ax-container">
-          <Reveal>
-            <div className="max-w-2xl">
-              <div className="font-mono text-[11px] tracking-[0.18em] uppercase text-[#00D4FF] mb-3">How it works</div>
-              <h2 className="text-white text-[32px] md:text-[48px] leading-[1.1] md:leading-[1.05] tracking-[-0.02em] md:tracking-[-0.03em] font-extrabold">From manual to AI-powered in 3 steps</h2>
-            </div>
-          </Reveal>
-          <div className="mt-10 md:mt-14 rounded-[16px] bg-[#12121A] border border-white/10 p-6 md:p-10">
-            <FlowDiagram />
-          </div>
-        </div>
-      </section>
-
-      {/* TESTIMONIALS */}
-      <section className="ax-section bg-[#0A0A0F]" data-testid="testimonials-section">
-        <div className="ax-container">
-          <Reveal>
-            <div className="max-w-2xl">
-              <div className="font-mono text-[11px] tracking-[0.18em] uppercase text-[#00D4FF] mb-3">Trusted by</div>
-              <h2 className="text-white text-[32px] md:text-[48px] leading-[1.1] md:leading-[1.05] tracking-[-0.02em] md:tracking-[-0.03em] font-extrabold">Business owners who automated to win</h2>
-            </div>
-          </Reveal>
-          <div className="mt-10 md:mt-14 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-            {TESTIMONIALS.map((t, i) => (
-              <Reveal key={t.name} delay={i * 80}>
-                <div className="h-full rounded-[16px] bg-[#12121A] border border-white/10 p-6 md:p-7 transition-[transform,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-[#00D4FF]/30" data-testid={`testimonial-card-${i}`}>
-                  <Quote className="h-6 w-6 text-[#00D4FF]" />
-                  <p className="mt-4 text-white text-[15px] md:text-base leading-relaxed">“{t.quote}”</p>
-                  <div className="mt-6 pt-4 border-t border-white/10">
-                    <div className="text-white font-semibold text-sm">{t.name}</div>
-                    <div className="text-[#C0C0C8]/60 text-xs">{t.role}</div>
-                    <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#10B981]/10 border border-[#10B981]/25 px-2.5 py-1">
-                      <span className="font-mono text-[10px] uppercase tracking-widest text-[#10B981]">{t.metric}</span>
-                    </div>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* TRUST */}
-      <section className="ax-section bg-[#0A0A0F]" data-testid="trust-section">
-        <div className="ax-container">
-          <Reveal>
-            <h2 className="text-white text-[32px] md:text-[48px] leading-[1.1] md:leading-[1.05] tracking-[-0.02em] md:tracking-[-0.03em] font-extrabold max-w-2xl">Why Axovion.io</h2>
-          </Reveal>
-          <div className="mt-10 md:mt-14 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5">
-            {TRUST_ITEMS.map((t, i) => (
-              <Reveal key={t.label} delay={i * 40}>
-                <div className="h-full rounded-[12px] bg-[#12121A] border border-white/8 px-5 py-4 flex items-center gap-3 transition-colors duration-200 hover:border-[#00D4FF]/25">
-                  <t.icon className="h-5 w-5 text-[#00D4FF] shrink-0" />
-                  <span className="text-[#C0C0C8] text-sm">{t.label}</span>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FINAL CTA */}
-      <section className="ax-section relative overflow-hidden bg-[#0A0A0F]" data-testid="final-cta-section">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -inset-24 bg-[radial-gradient(800px_circle_at_50%_50%,rgba(249,115,22,0.10),transparent_60%)]" />
-        </div>
-        <div className="relative ax-container text-center max-w-3xl mx-auto">
-          <Reveal>
-            <h2 className="text-white text-[32px] md:text-[56px] leading-[1.05] tracking-[-0.03em] font-extrabold">Ready to stop working harder and start scaling?</h2>
-            <p className="mt-5 text-[#C0C0C8]/75 text-base md:text-lg max-w-2xl mx-auto">
-              Get your free AI Audit. See exactly where AI can automate your business — with estimated ROI, monthly savings, and a clear implementation plan.
-            </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                to="/audit"
-                data-testid="final-cta-primary-button"
-                className="inline-flex items-center justify-center gap-2 rounded-[12px] bg-[#F97316] text-[#0A0A0F] px-7 py-4 text-base font-bold transition-colors duration-200 hover:bg-[#FBBF24] ax-cta-pulse"
-              >
-                Start Free AI Audit <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                to="/contact"
-                data-testid="final-cta-secondary-button"
-                className="inline-flex items-center justify-center gap-2 rounded-[12px] bg-[#12121A] text-white px-7 py-4 text-base font-semibold border border-white/15 transition-colors duration-200 hover:border-[#00D4FF]/45"
-              >
-                Book a Call
-              </Link>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-    </>
-  );
-};
-
-const Metric = ({ label, value, hint }) => (
-  <div className="rounded-[12px] bg-[#0A0A0F] border border-white/8 p-3">
-    <div className="font-mono text-[9px] tracking-[0.18em] uppercase text-[#C0C0C8]/55">{label}</div>
-    <div className="text-white text-xl font-extrabold mt-1">{value}</div>
-    <div className="text-[#C0C0C8]/55 text-[10px] mt-0.5">{hint}</div>
-  </div>
-);
-
-const KPI = ({ label, value, hint }) => (
-  <div className="rounded-[10px] bg-[#0A0A0F] border border-white/8 px-3 py-2">
-    <div className="font-mono text-[9px] tracking-[0.18em] uppercase text-[#C0C0C8]/55">{label}</div>
-    <div className="text-[#00D4FF] text-base font-bold font-mono mt-0.5">{value}</div>
-    <div className="text-[#C0C0C8]/55 text-[10px]">{hint}</div>
-  </div>
-);
-
-const Sparkline = () => (
-  <div className="mt-5 h-20 w-full relative">
-    <svg width="100%" height="100%" viewBox="0 0 300 80" preserveAspectRatio="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#00D4FF" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="#00D4FF" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d="M0 60 L30 56 L60 50 L90 52 L120 42 L150 38 L180 30 L210 26 L240 18 L270 14 L300 8 L300 80 L0 80 Z" fill="url(#sparkFill)" />
-      <path d="M0 60 L30 56 L60 50 L90 52 L120 42 L150 38 L180 30 L210 26 L240 18 L270 14 L300 8" stroke="#00D4FF" strokeWidth="1.5" fill="none" />
-    </svg>
-  </div>
-);
-
-const FlowDiagram = () => {
-  const pathRef = useRef(null);
-  useEffect(() => {
-    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const el = pathRef.current;
-    if (!el) return;
-    const len = el.getTotalLength();
-    el.style.strokeDasharray = `${len}`;
-    if (reduced) {
-      el.style.strokeDashoffset = '0';
-      return;
-    }
-    el.style.strokeDashoffset = `${len}`;
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach((e) => {
-        if (e.isIntersecting) {
-          el.style.transition = 'stroke-dashoffset 1.6s cubic-bezier(0.16, 1, 0.3, 1)';
-          el.style.strokeDashoffset = '0';
-          obs.disconnect();
-        }
-      });
-    }, { threshold: 0.4 });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-
-  return (
-    <div className="relative" data-testid="how-it-works-flow">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 relative z-10">
-        {[
-          { num: '01', title: 'Submit AI Audit', desc: 'Fill the form. We capture business workflows, tools, bottlenecks, and goals.', icon: ClipboardCheck },
-          { num: '02', title: 'AI Analysis', desc: 'Our AI scans your business and generates a structured automation map with ROI.', icon: BrainCircuit },
-          { num: '03', title: 'Custom Report + Call', desc: 'Receive an interactive report. Book a call with us to plan implementation.', icon: TrendingUp },
-        ].map((s) => (
-          <div key={s.num} className="rounded-[14px] bg-[#0A0A0F] border border-white/10 p-6 transition-colors duration-300 hover:border-[#00D4FF]/35">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-9 w-9 rounded-[10px] bg-[#00D4FF]/12 border border-[#00D4FF]/30 inline-flex items-center justify-center">
-                <s.icon className="h-5 w-5 text-[#00D4FF]" />
-              </div>
-              <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-[#C0C0C8]/55">Step {s.num}</span>
-            </div>
-            <h3 className="text-white text-lg font-bold mb-2">{s.title}</h3>
-            <p className="text-[#C0C0C8]/70 text-sm leading-relaxed">{s.desc}</p>
-          </div>
-        ))}
-      </div>
-      <svg className="hidden md:block absolute left-0 right-0 top-1/2 -translate-y-1/2 pointer-events-none w-full h-12" viewBox="0 0 1000 40" preserveAspectRatio="none" aria-hidden="true">
-        <path
-          ref={pathRef}
-          d="M 60 20 Q 250 -20 500 20 T 940 20"
-          stroke="#00D4FF"
-          strokeWidth="1.5"
-          fill="none"
-          opacity="0.55"
+      {/* HERO: the scroll cinematic.
+          The engine emits an h2 per scene, so the single page h1 sits here,
+          ahead of them, and the outline runs h1 then h2 with no skipped level. */}
+      <section data-testid="home-hero">
+        <h1 className="sr-only">
+          Axovion.io builds AI agents that automate customer support, lead follow-up, booking
+          and the repetitive work behind them.
+        </h1>
+        <ScrollWorld
+          scenes={SCENES}
+          connectors={CONNECTORS}
+          connectorsMobile={CONNECTORS_MOBILE}
+          diveScroll={1.25}
+          connScroll={0.8}
         />
-      </svg>
-    </div>
+      </section>
+
+      {/* Everything below the cinematic. Raised above the engine's fixed
+          layers, which stay mounted for the length of the flight. */}
+      <div className="relative z-10">
+
+        {/* WHAT IT COSTS TO LEAVE IT ALONE */}
+        <section className="ax-section" data-testid="home-problem-section">
+          <div className="ax-container">
+            <Reveal>
+              <h2 className={H2}>Still doing work that AI should handle?</h2>
+              <p className="mt-5 text-base md:text-lg leading-relaxed max-w-[56ch]" style={{ color: 'var(--ax-muted)' }}>
+                Every figure here came out of a real audit. The pattern repeats across industries,
+                and it is always measurable before anyone writes a line of code.
+              </p>
+            </Reveal>
+
+            <div className="mt-12 md:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-10">
+              {COST_STATS.map((stat, i) => (
+                <Reveal key={stat.value} delay={i * 60}>
+                  <div className="pt-6 border-t lg:border-t-0 lg:pt-0 lg:border-l lg:pl-8 lg:first:border-l-0 lg:first:pl-0" style={{ borderColor: 'var(--ax-border)' }}>
+                    <div className="ax-nums text-[42px] md:text-[54px] font-medium leading-none" style={{ color: 'var(--ax-heading)' }}>
+                      {stat.value}
+                    </div>
+                    <p className="mt-5 text-sm leading-relaxed max-w-[34ch]" style={{ color: 'var(--ax-muted)' }}>
+                      {stat.label}
+                    </p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* SERVICES INDEX */}
+        <section className="ax-section pt-0 md:pt-0" data-testid="home-services-section">
+          <div className="ax-container">
+            <Reveal>
+              <h2 className={H2}>Eight agents, built and handed over</h2>
+              <p className="mt-5 text-base md:text-lg leading-relaxed max-w-[56ch]" style={{ color: 'var(--ax-muted)' }}>
+                Production builds for the workflows that eat the margin. Pick the one that hurts
+                most and we will scope it in the audit.
+              </p>
+            </Reveal>
+
+            <div className="mt-10 md:mt-14 grid grid-cols-1 md:grid-cols-2 gap-x-14">
+              {SERVICES.map((service, i) => {
+                const Icon = ICON_MAP[service.icon] || Compass;
+                return (
+                  <Reveal key={service.slug} delay={(i % 2) * 60}>
+                    <Link
+                      to="/services"
+                      data-testid={`service-row-${service.slug}`}
+                      className="group flex items-start gap-5 py-6 border-t transition-colors duration-200"
+                      style={{ borderColor: 'var(--ax-border)' }}
+                    >
+                      <Icon className="h-5 w-5 mt-1 shrink-0" strokeWidth={1.5} style={{ color: 'var(--ax-accent)' }} aria-hidden="true" />
+                      <span className="min-w-0">
+                        <span className="block text-lg font-semibold" style={{ color: 'var(--ax-heading)' }}>
+                          {clean(service.title)}
+                        </span>
+                        <span className="block mt-2 text-sm leading-relaxed" style={{ color: 'var(--ax-muted)' }}>
+                          {clean(service.short)}
+                        </span>
+                      </span>
+                      <ArrowUpRight
+                        className="h-4 w-4 mt-1.5 ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        strokeWidth={1.5}
+                        style={{ color: 'var(--ax-accent)' }}
+                        aria-hidden="true"
+                      />
+                    </Link>
+                  </Reveal>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* PROOF */}
+        <section className="ax-section pt-0 md:pt-0" data-testid="testimonials-section">
+          <div className="ax-container">
+            <Reveal>
+              <h2 className={H2}>Business owners who automated to win</h2>
+            </Reveal>
+
+            <div className="mt-10 md:mt-14 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14">
+              <Reveal className="lg:col-span-7">
+                <figure
+                  className="h-full m-0 flex flex-col justify-between rounded-[16px] p-8 md:p-10"
+                  style={{ background: 'var(--ax-surface)', border: '1px solid var(--ax-border)' }}
+                  data-testid="testimonial-featured"
+                >
+                  <blockquote className="m-0 text-xl md:text-[26px] leading-[1.4] font-medium" style={{ color: 'var(--ax-heading)' }}>
+                    “{clean(featured.quote)}”
+                  </blockquote>
+                  <figcaption className="mt-10 pt-6" style={{ borderTop: '1px solid var(--ax-border)' }}>
+                    <div className="ax-nums text-base font-medium" style={{ color: 'var(--ax-accent)' }}>
+                      {clean(featured.metric)}
+                    </div>
+                    <div className="mt-4 text-sm font-medium" style={{ color: 'var(--ax-heading)' }}>{featured.name}</div>
+                    <div className="text-sm" style={{ color: 'var(--ax-muted-2)' }}>{featured.role}</div>
+                  </figcaption>
+                </figure>
+              </Reveal>
+
+              <div className="lg:col-span-5 flex flex-col justify-center">
+                {others.map((item, i) => (
+                  <Reveal key={item.name} delay={80 + i * 80}>
+                    <figure
+                      className="m-0 py-8"
+                      style={{ borderTop: i === 0 ? 'none' : '1px solid var(--ax-border)' }}
+                      data-testid={`testimonial-card-${i}`}
+                    >
+                      <blockquote className="m-0 text-base leading-relaxed" style={{ color: 'var(--ax-text)' }}>
+                        “{clean(item.quote)}”
+                      </blockquote>
+                      <figcaption className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <span className="text-sm font-medium" style={{ color: 'var(--ax-heading)' }}>{item.name}</span>
+                        <span className="text-sm" style={{ color: 'var(--ax-muted-2)' }}>{item.role}</span>
+                        <span className="ax-nums text-sm w-full" style={{ color: 'var(--ax-accent)' }}>{clean(item.metric)}</span>
+                      </figcaption>
+                    </figure>
+                  </Reveal>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* WHY AXOVION */}
+        <section className="ax-section pt-0 md:pt-0" data-testid="trust-section">
+          <div className="ax-container">
+            <Reveal>
+              <h2 className={H2}>Why Axovion.io</h2>
+            </Reveal>
+
+            <div className="mt-10 md:mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-9">
+              {TRUST_ITEMS.map((item, i) => (
+                <Reveal key={item} delay={i * 50}>
+                  <p
+                    className="pt-5 m-0 text-[15px] leading-relaxed border-t"
+                    style={{ borderColor: 'var(--ax-border)', color: 'var(--ax-text)' }}
+                  >
+                    {item}
+                  </p>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CLOSING CTA */}
+        <section className="ax-section pt-0 md:pt-0" data-testid="final-cta-section">
+          <div className="ax-container">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start pt-16 md:pt-20 border-t" style={{ borderColor: 'var(--ax-border)' }}>
+              <Reveal className="lg:col-span-7">
+                <h2 className="text-[34px] md:text-[56px] font-bold leading-[1.03] tracking-[-0.03em]">
+                  Ready to stop working harder and start scaling?
+                </h2>
+                <p className="mt-6 text-base md:text-lg leading-relaxed max-w-[54ch]" style={{ color: 'var(--ax-muted)' }}>
+                  Describe the business once. You get an automation map, an estimate of what it
+                  saves per month, and the agents we would build first.
+                </p>
+                <div className="mt-9 flex flex-col sm:flex-row gap-3">
+                  <Link
+                    to="/audit"
+                    data-testid="final-cta-primary-button"
+                    className="inline-flex items-center justify-center rounded-[12px] px-7 text-base font-semibold transition-colors duration-200 active:scale-[0.98]"
+                    style={{ minHeight: 52, background: 'var(--ax-accent)', color: 'var(--ax-on-accent)' }}
+                    onMouseOver={(e) => { e.currentTarget.style.background = 'var(--ax-accent-dim)'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = 'var(--ax-accent)'; }}
+                  >
+                    Start Free AI Audit
+                  </Link>
+                  <Link
+                    to="/contact"
+                    data-testid="final-cta-secondary-button"
+                    className="inline-flex items-center justify-center rounded-[12px] px-7 text-base font-semibold transition-colors duration-200"
+                    style={{
+                      minHeight: 52,
+                      background: 'var(--ax-surface)',
+                      color: 'var(--ax-heading)',
+                      border: '1px solid var(--ax-border-strong)',
+                    }}
+                  >
+                    Book a Call
+                  </Link>
+                </div>
+              </Reveal>
+
+              <Reveal className="lg:col-span-5" delay={80}>
+                <div className="rounded-[16px] p-7 md:p-8" style={{ background: 'var(--ax-surface)', border: '1px solid var(--ax-border)' }}>
+                  <p className="m-0 text-sm font-medium" style={{ color: 'var(--ax-muted-2)' }}>
+                    What comes back in the report
+                  </p>
+                  <ul className="mt-5 m-0 p-0 list-none">
+                    {SERVICES[0].bullets.map((bullet, i) => (
+                      <li
+                        key={bullet}
+                        className="py-3.5 text-[15px]"
+                        style={{ color: 'var(--ax-text)', borderTop: i === 0 ? 'none' : '1px solid var(--ax-border)' }}
+                      >
+                        {clean(bullet)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </Reveal>
+            </div>
+          </div>
+        </section>
+      </div>
+    </>
   );
 };
 

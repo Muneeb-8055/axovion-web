@@ -1,290 +1,638 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { adminApi } from '../../lib/api';
+import {
+  Plus, Trash2, RefreshCw, AlertCircle, ClipboardList,
+  ChevronRight, X, Loader2,
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
-import { Plus, Trash2, RefreshCw, Users, Pencil, AlertTriangle } from 'lucide-react';
-import EmployeeCard from '../../components/EmployeeCard';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from '../../components/ui/dialog';
+
+// ---- constants ---------------------------------------------------------------
 
 const COLS = [
-  { id: 'todo', label: 'To Do' },
-  { id: 'in-progress', label: 'In Progress' },
-  { id: 'done', label: 'Done' },
+  { id: 'todo',        label: 'To Do',       accent: 'var(--ax-muted)' },
+  { id: 'in-progress', label: 'In Progress',  accent: 'var(--ax-info)' },
+  { id: 'review',      label: 'Review',       accent: 'var(--ax-warn)' },
+  { id: 'done',        label: 'Done',         accent: 'var(--ax-success)' },
 ];
 
-const PRIORITY_COLOR = {
-  urgent: 'bg-[#EF4444]/15 text-[#EF4444] border-[#EF4444]/25',
-  high: 'bg-[#F97316]/15 text-[#F97316] border-[#F97316]/25',
-  medium: 'bg-[#FBBF24]/15 text-[#FBBF24] border-[#FBBF24]/25',
-  low: 'bg-[#3B82F6]/15 text-[#3B82F6] border-[#3B82F6]/25',
+const PRIORITY_META = {
+  urgent: { label: 'Urgent', color: 'var(--ax-error)' },
+  high:   { label: 'High',   color: 'var(--ax-warn)' },
+  medium: { label: 'Medium', color: 'var(--ax-warn)' },
+  low:    { label: 'Low',    color: 'var(--ax-info)' },
 };
 
-const AdminTasks = () => {
-  const [tasks, setTasks] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [employeeProfiles, setEmployeeProfiles] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [draft, setDraft] = useState({ title: '', description: '', priority: 'medium', status: 'todo', assignee: '' });
-  const [editing, setEditing] = useState(null);
-  const [editDraft, setEditDraft] = useState({ title: '', description: '', priority: 'medium', status: 'todo', assignee: '' });
-  const [viewingIssue, setViewingIssue] = useState(null);
+const EMPTY_DRAFT = { title: '', description: '', priority: 'medium', status: 'todo' };
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const [t, e] = await Promise.all([
-        adminApi.listTasks(),
-        adminApi.listEmployees(),
-      ]);
-      setTasks(t.data?.tasks || []);
-      setEmployees(Array.isArray(e.data) ? e.data : (e.data?.employees || []));
+// ---- helpers ---------------------------------------------------------------
 
-      // Load profile summary for each employee (for status badges)
-      const empList = Array.isArray(e.data) ? e.data : (e.data?.employees || []);
-      const profiles = {};
-      await Promise.allSettled(
-        empList.map(async (emp) => {
-          try {
-            const r = await adminApi.getEmployeeProfileSummary(emp.id);
-            const data = r.data || {};
-            // Convert task arrays to badge counts
-            const tasks = data.tasks || {};
-            data.taskBadges = {
-              todo: (tasks.todo || []).length,
-              inProgress: ((tasks['in-progress'] || []) + (tasks.in_progress || [])).length,
-              done: (tasks.done || []).length,
-            };
-            profiles[emp.id] = data;
-          } catch {}
-        })
-      );
-      setEmployeeProfiles(profiles);
-    } catch (e) { toast.error('Failed to load'); }
-    finally { setLoading(false); }
+function priorityStyle(p) {
+  const meta = PRIORITY_META[p] || PRIORITY_META.medium;
+  return {
+    color: meta.color,
+    borderColor: meta.color + '44',
+    backgroundColor: meta.color + '1a',
   };
+}
 
-  useEffect(() => { load(); }, []);
+// ---- Skeleton ---------------------------------------------------------------
 
-  const create = async () => {
-    if (!draft.title) { toast.error('Title required'); return; }
-    try {
-      await adminApi.createTask(draft);
-      toast.success('Task created');
-      setCreating(false);
-      setDraft({ title: '', description: '', priority: 'medium', status: 'todo', assignee: '' });
-      load();
-    } catch (e) { toast.error('Failed to create'); }
-  };
+function ColumnSkeleton() {
+  return (
+    <div
+      style={{
+        background: 'var(--ax-surface)',
+        borderRadius: 'var(--ax-radius-panel)',
+        border: '1px solid var(--ax-border)',
+        padding: '16px',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+        <div className="skel" style={{ width: 72, height: 14, borderRadius: 4 }} />
+        <div className="skel" style={{ width: 20, height: 14, borderRadius: 4 }} />
+      </div>
+      {[1, 2].map((n) => (
+        <div key={n} className="skel" style={{ width: '100%', height: 68, borderRadius: 'var(--ax-radius-control)', marginBottom: 10 }} />
+      ))}
+    </div>
+  );
+}
 
-  const moveTask = async (task, newStatus) => {
-    try { await adminApi.updateTask(task.id, { ...task, status: newStatus }); load(); }
-    catch (e) { toast.error('Move failed'); }
-  };
+// ---- TaskCard ---------------------------------------------------------------
 
-  const remove = async (id) => {
-    if (!window.confirm('Move this task to the recycle bin?')) return;
-    try { await adminApi.deleteTask(id); toast.success('Moved to recycle bin'); load(); }
-    catch (e) { toast.error('Delete failed'); }
-  };
+function TaskCard({ task, onMove, onDelete }) {
+  const nextCol = COLS[COLS.findIndex((c) => c.id === task.status) + 1];
+  const [confirming, setConfirming] = useState(false);
+  const [moving, setMoving] = useState(false);
 
-  const openEdit = (task) => {
-    setEditing(task);
-    setEditDraft({
-      title: task.title || '',
-      description: task.description || '',
-      priority: task.priority || 'medium',
-      status: task.status || 'todo',
-      assignee: task.assignee || '',
-    });
-  };
-
-  const saveEdit = async () => {
-    if (!editDraft.title) { toast.error('Title required'); return; }
-    try {
-      await adminApi.updateTask(editing.id, editDraft);
-      toast.success('Task updated');
-      setEditing(null);
-      load();
-    } catch (e) { toast.error('Update failed'); }
-  };
-
-  const resolveIssue = async (id) => {
-    try { await adminApi.resolveTaskIssue(id); toast.success('Issue marked resolved'); setViewingIssue(null); load(); }
-    catch (e) { toast.error('Failed to resolve'); }
+  const handleMove = async () => {
+    if (!nextCol) return;
+    setMoving(true);
+    await onMove(task, nextCol.id);
+    setMoving(false);
   };
 
   return (
-    <div className="space-y-6" data-testid="admin-tasks-page">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="font-mono text-[11px] tracking-[0.18em] uppercase text-[#00D4FF] mb-2">Tasks</div>
-          <h1 className="text-white text-2xl md:text-3xl font-extrabold tracking-tight">Kanban Board</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={load} className="inline-flex items-center gap-1.5 text-sm text-[#C0C0C8] hover:text-white">
-            <RefreshCw className="h-3.5 w-3.5" /> Refresh
+    <article
+      data-testid={`task-card-${task.id}`}
+      style={{
+        background: 'var(--ax-bg)',
+        border: '1px solid var(--ax-border)',
+        borderRadius: 'var(--ax-radius-control)',
+        padding: '12px',
+        transition: 'border-color var(--ax-duration-fast)',
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,212,255,0.22)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--ax-border)'; }}
+    >
+      {/* title + delete */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+        <h4
+          style={{
+            flex: 1,
+            color: 'var(--ax-heading)',
+            fontSize: 13,
+            fontWeight: 600,
+            lineHeight: 1.4,
+            margin: 0,
+          }}
+        >
+          {task.title}
+        </h4>
+        {confirming ? (
+          <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+            <button
+              onClick={() => { setConfirming(false); onDelete(task.id); }}
+              aria-label="Confirm delete"
+              style={{
+                minWidth: 44, minHeight: 44,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--ax-error)', background: 'none', border: 'none',
+                cursor: 'pointer', borderRadius: 'var(--ax-radius-control)',
+              }}
+            >
+              <Trash2 size={13} strokeWidth={1.5} />
+            </button>
+            <button
+              onClick={() => setConfirming(false)}
+              aria-label="Cancel delete"
+              style={{
+                minWidth: 44, minHeight: 44,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--ax-muted)', background: 'none', border: 'none',
+                cursor: 'pointer', borderRadius: 'var(--ax-radius-control)',
+              }}
+            >
+              <X size={13} strokeWidth={1.5} />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirming(true)}
+            aria-label="Delete task"
+            style={{
+              minWidth: 44, minHeight: 44,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--ax-muted)', background: 'none', border: 'none',
+              cursor: 'pointer', borderRadius: 'var(--ax-radius-control)',
+              transition: 'color var(--ax-duration-fast)',
+              flexShrink: 0,
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--ax-error)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ax-muted)'; }}
+          >
+            <Trash2 size={13} strokeWidth={1.5} />
           </button>
-          <Dialog open={creating} onOpenChange={setCreating}>
-            <DialogTrigger asChild>
-              <button className="inline-flex items-center gap-1.5 text-sm bg-[#F97316] text-[#0A0A0F] px-3 py-2 rounded-[10px] font-bold hover:bg-[#FBBF24]">
-                <Plus className="h-3.5 w-3.5" /> New task
-              </button>
-            </DialogTrigger>
-            <DialogContent className="bg-[#12121A] border border-white/10">
-              <DialogHeader>
-                <DialogTitle className="text-white">Create task</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3">
-                <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="Title" className="w-full bg-[#0A0A0F] border border-white/10 rounded-[10px] px-3 py-2 text-sm text-white placeholder:text-[#C0C0C8]/40" />
-                <textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} rows="3" placeholder="Description" className="w-full bg-[#0A0A0F] border border-white/10 rounded-[10px] px-3 py-2 text-sm text-white placeholder:text-[#C0C0C8]/40" />
-                <div className="flex gap-3">
-                  <select value={draft.priority} onChange={(e) => setDraft({ ...draft, priority: e.target.value })} className="flex-1 bg-[#0A0A0F] border border-white/10 rounded-[10px] px-3 py-2 text-sm text-white">
-                    <option value="low">low</option><option value="medium">medium</option><option value="high">high</option><option value="urgent">urgent</option>
-                  </select>
-                  <select value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value })} className="flex-1 bg-[#0A0A0F] border border-white/10 rounded-[10px] px-3 py-2 text-sm text-white">
-                    {COLS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-                  </select>
-                </div>
-                <select value={draft.assignee} onChange={(e) => setDraft({ ...draft, assignee: e.target.value })} className="w-full bg-[#0A0A0F] border border-white/10 rounded-[10px] px-3 py-2 text-sm text-white">
-                  <option value="">Unassigned</option>
-                  {employees.map((emp) => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
-                </select>
-                <button onClick={create} className="w-full bg-[#F97316] text-[#0A0A0F] rounded-[10px] px-4 py-2.5 text-sm font-bold hover:bg-[#FBBF24]">Create</button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+        )}
       </div>
 
-      <div className="flex gap-6 items-start">
-        {/* Kanban columns */}
-        <div className="flex-1 min-w-0">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-testid="admin-kanban">
-            {COLS.map((col) => {
-              const colTasks = tasks.filter((t) => t.status === col.id);
-              return (
-                <div key={col.id} className="rounded-[16px] bg-[#12121A] border border-white/10 p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-white font-bold text-sm">{col.label}</h3>
-                    <span className="font-mono text-xs text-[#C0C0C8]/55">{colTasks.length}</span>
-                  </div>
-                  <div className="space-y-3 min-h-[120px]">
-                    {colTasks.map((t) => {
-                      const assignee = employees.find((e) => e.id === t.assignee);
-                      const feedbackCount = (t.feedback || []).length;
-                      return (
-                        <div key={t.id} className={`rounded-[12px] bg-[#0A0A0F] border p-3 hover:border-[#00D4FF]/25 ${t.hasIssue ? 'border-[#EF4444]/40' : 'border-white/10'}`} data-testid={`task-card-${t.id}`}>
-                          <div className="flex items-start justify-between gap-2">
-                            <h4 className="text-white font-semibold text-sm leading-snug flex-1">{t.title}</h4>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <button onClick={() => openEdit(t)} className="text-[#C0C0C8] hover:text-[#00D4FF]" title="Edit task"><Pencil className="h-3 w-3" /></button>
-                              <button onClick={() => remove(t.id)} className="text-[#C0C0C8] hover:text-[#EF4444]" title="Delete task"><Trash2 className="h-3 w-3" /></button>
-                            </div>
-                          </div>
-                          {t.description && <p className="text-[#C0C0C8]/65 text-xs mt-1">{t.description}</p>}
-                          {assignee && <p className="text-[#00D4FF]/75 text-[10px] mt-1.5">{assignee.name}</p>}
-                          {t.hasIssue && (
-                            <button onClick={() => setViewingIssue(t)} className="mt-2 w-full flex items-center gap-1.5 text-[10px] font-bold text-[#EF4444] bg-[#EF4444]/10 border border-[#EF4444]/25 rounded-lg px-2 py-1 hover:bg-[#EF4444]/20">
-                              <AlertTriangle className="h-3 w-3" /> Issue raised ({feedbackCount}) — view
-                            </button>
-                          )}
-                          <div className="mt-3 flex items-center justify-between gap-2">
-                            <span className={`text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded border ${PRIORITY_COLOR[t.priority] || PRIORITY_COLOR.medium}`}>{t.priority}</span>
-                            <select value={t.status} onChange={(e) => moveTask(t, e.target.value)} className="bg-[#161622] border border-white/10 rounded text-[10px] text-white px-1.5 py-0.5">
-                              {COLS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-                            </select>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {colTasks.length === 0 && <p className="text-center text-xs text-[#C0C0C8]/45 py-6">Empty</p>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      {task.description && (
+        <p style={{
+          marginTop: 6,
+          color: 'var(--ax-muted)',
+          fontSize: 12,
+          lineHeight: 1.5,
+        }}>
+          {task.description}
+        </p>
+      )}
 
-        {/* Assigned Employees panel */}
-        <div className="w-72 shrink-0 hidden xl:block">
-          <div className="sticky top-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Users className="h-4 w-4 text-[#00D4FF]" />
-              <h3 className="text-white font-bold text-sm">Assigned Employees</h3>
-            </div>
-            <div className="space-y-2">
-              {employees.map((emp) => (
-                <EmployeeCard
-                  key={emp.id}
-                  employee={employeeProfiles[emp.id] || { profile: { name: emp.name, email: emp.email, photoUrl: emp.photoUrl }, stats: emp.stats, taskBadges: { todo: 0, inProgress: 0, done: 0 } }}
-                  compact
-                  onClick={() => {}}
-                />
-              ))}
-              {employees.length === 0 && <p className="text-[#C0C0C8]/45 text-xs text-center py-6">No employees</p>}
-            </div>
-          </div>
+      {/* footer: priority + advance button */}
+      <div style={{
+        marginTop: 10,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 8,
+      }}>
+        <span
+          className="ax-nums"
+          style={{
+            fontSize: 10,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            padding: '2px 7px',
+            borderRadius: 'var(--ax-radius-pill)',
+            border: '1px solid',
+            ...priorityStyle(task.priority),
+          }}
+        >
+          {(PRIORITY_META[task.priority] || PRIORITY_META.medium).label}
+        </span>
+
+        {nextCol && (
+          <button
+            onClick={handleMove}
+            disabled={moving}
+            aria-label={`Move to ${nextCol.label}`}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 3,
+              color: 'var(--ax-accent)',
+              fontSize: 11,
+              fontWeight: 500,
+              background: 'none',
+              border: 'none',
+              cursor: moving ? 'wait' : 'pointer',
+              padding: '6px 0',
+              minHeight: 44,
+              transition: 'opacity var(--ax-duration-fast)',
+              opacity: moving ? 0.5 : 1,
+            }}
+          >
+            {moving
+              ? <Loader2 size={11} strokeWidth={1.5} style={{ animation: 'spin 0.8s linear infinite' }} />
+              : <ChevronRight size={11} strokeWidth={1.5} />
+            }
+            {nextCol.label}
+          </button>
+        )}
+      </div>
+    </article>
+  );
+}
+
+// ---- Column ---------------------------------------------------------------
+
+function Column({ col, tasks, onMove, onDelete }) {
+  const revealRef = useRef(null);
+
+  useEffect(() => {
+    const el = revealRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add('ax-reveal-in');
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={revealRef}
+      className="ax-reveal"
+      style={{
+        background: 'var(--ax-surface)',
+        border: '1px solid var(--ax-border)',
+        borderRadius: 'var(--ax-radius-panel)',
+        padding: '16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0,
+      }}
+    >
+      {/* column header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span
+            style={{
+              width: 6, height: 6,
+              borderRadius: '50%',
+              background: col.accent,
+              flexShrink: 0,
+            }}
+          />
+          <h3 style={{ color: 'var(--ax-heading)', fontWeight: 600, fontSize: 13, margin: 0 }}>
+            {col.label}
+          </h3>
         </div>
+        <span
+          className="ax-nums"
+          style={{ fontSize: 11, color: 'var(--ax-muted-2)', fontWeight: 500 }}
+        >
+          {tasks.length}
+        </span>
       </div>
 
-      {/* Edit Task Dialog */}
-      <Dialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)}>
-        <DialogContent className="bg-[#12121A] border border-white/10">
-          <DialogHeader>
-            <DialogTitle className="text-white">Edit task</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <input value={editDraft.title} onChange={(e) => setEditDraft({ ...editDraft, title: e.target.value })} placeholder="Title" className="w-full bg-[#0A0A0F] border border-white/10 rounded-[10px] px-3 py-2 text-sm text-white placeholder:text-[#C0C0C8]/40" />
-            <textarea value={editDraft.description} onChange={(e) => setEditDraft({ ...editDraft, description: e.target.value })} rows="3" placeholder="Description" className="w-full bg-[#0A0A0F] border border-white/10 rounded-[10px] px-3 py-2 text-sm text-white placeholder:text-[#C0C0C8]/40" />
-            <div className="flex gap-3">
-              <select value={editDraft.priority} onChange={(e) => setEditDraft({ ...editDraft, priority: e.target.value })} className="flex-1 bg-[#0A0A0F] border border-white/10 rounded-[10px] px-3 py-2 text-sm text-white">
-                <option value="low">low</option><option value="medium">medium</option><option value="high">high</option><option value="urgent">urgent</option>
+      {/* hairline below header */}
+      <div style={{ height: 1, background: 'var(--ax-border)', marginBottom: 12 }} />
+
+      {/* tasks */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 96 }}>
+        {tasks.map((t) => (
+          <TaskCard key={t.id} task={t} onMove={onMove} onDelete={onDelete} />
+        ))}
+        {tasks.length === 0 && (
+          <p style={{
+            color: 'var(--ax-muted-2)',
+            fontSize: 12,
+            textAlign: 'center',
+            paddingTop: 20,
+            paddingBottom: 20,
+          }}>
+            No items
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---- CreateDialog ---------------------------------------------------------------
+
+function CreateDialog({ open, onOpenChange, onCreated }) {
+  const [draft, setDraft] = useState(EMPTY_DRAFT);
+  const [busy, setBusy] = useState(false);
+  const titleRef = useRef(null);
+
+  useEffect(() => {
+    if (open) {
+      setDraft(EMPTY_DRAFT);
+      setTimeout(() => titleRef.current?.focus(), 60);
+    }
+  }, [open]);
+
+  const handle = (k) => (e) => setDraft((d) => ({ ...d, [k]: e.target.value }));
+
+  const submit = async () => {
+    if (!draft.title.trim()) { toast.error('Title is required'); return; }
+    setBusy(true);
+    try {
+      await adminApi.createTask(draft);
+      toast.success('Task created');
+      onOpenChange(false);
+      onCreated();
+    } catch {
+      toast.error('Could not create task');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const inputStyle = {
+    width: '100%', boxSizing: 'border-box',
+    background: 'var(--ax-bg)',
+    border: '1px solid var(--ax-border)',
+    borderRadius: 'var(--ax-radius-control)',
+    padding: '10px 12px',
+    fontSize: 13,
+    color: 'var(--ax-heading)',
+    fontFamily: 'inherit',
+    outline: 'none',
+    transition: 'border-color var(--ax-duration-fast)',
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        style={{ background: 'var(--ax-surface)', border: '1px solid var(--ax-border-strong)' }}
+      >
+        <DialogHeader>
+          <DialogTitle style={{ color: 'var(--ax-heading)' }}>New task</DialogTitle>
+        </DialogHeader>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 4 }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <span style={{ fontSize: 12, color: 'var(--ax-muted)', fontWeight: 500 }}>Title</span>
+            <input
+              ref={titleRef}
+              value={draft.title}
+              onChange={handle('title')}
+              data-testid="task-form-title"
+              placeholder="Short descriptive title"
+              style={inputStyle}
+              onFocus={(e) => { e.target.style.borderColor = 'rgba(0,212,255,0.45)'; }}
+              onBlur={(e) => { e.target.style.borderColor = 'var(--ax-border)'; }}
+            />
+          </label>
+
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <span style={{ fontSize: 12, color: 'var(--ax-muted)', fontWeight: 500 }}>Description (optional)</span>
+            <textarea
+              value={draft.description}
+              onChange={handle('description')}
+              data-testid="task-form-description"
+              rows={3}
+              placeholder="Context, links, acceptance criteria..."
+              style={{ ...inputStyle, resize: 'vertical' }}
+              onFocus={(e) => { e.target.style.borderColor = 'rgba(0,212,255,0.45)'; }}
+              onBlur={(e) => { e.target.style.borderColor = 'var(--ax-border)'; }}
+            />
+          </label>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <span style={{ fontSize: 12, color: 'var(--ax-muted)', fontWeight: 500 }}>Priority</span>
+              <select
+                value={draft.priority}
+                onChange={handle('priority')}
+                style={{ ...inputStyle, cursor: 'pointer' }}
+                onFocus={(e) => { e.target.style.borderColor = 'rgba(0,212,255,0.45)'; }}
+                onBlur={(e) => { e.target.style.borderColor = 'var(--ax-border)'; }}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
               </select>
-              <select value={editDraft.status} onChange={(e) => setEditDraft({ ...editDraft, status: e.target.value })} className="flex-1 bg-[#0A0A0F] border border-white/10 rounded-[10px] px-3 py-2 text-sm text-white">
+            </label>
+
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <span style={{ fontSize: 12, color: 'var(--ax-muted)', fontWeight: 500 }}>Initial column</span>
+              <select
+                value={draft.status}
+                onChange={handle('status')}
+                style={{ ...inputStyle, cursor: 'pointer' }}
+                onFocus={(e) => { e.target.style.borderColor = 'rgba(0,212,255,0.45)'; }}
+                onBlur={(e) => { e.target.style.borderColor = 'var(--ax-border)'; }}
+              >
                 {COLS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
               </select>
-            </div>
-            <select value={editDraft.assignee} onChange={(e) => setEditDraft({ ...editDraft, assignee: e.target.value })} className="w-full bg-[#0A0A0F] border border-white/10 rounded-[10px] px-3 py-2 text-sm text-white">
-              <option value="">Unassigned</option>
-              {employees.map((emp) => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
-            </select>
-            <button onClick={saveEdit} className="w-full bg-[#F97316] text-[#0A0A0F] rounded-[10px] px-4 py-2.5 text-sm font-bold hover:bg-[#FBBF24]">Save changes</button>
+            </label>
           </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* Task Issue / Feedback Dialog */}
-      <Dialog open={!!viewingIssue} onOpenChange={(v) => !v && setViewingIssue(null)}>
-        <DialogContent className="bg-[#12121A] border border-white/10 max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-[#EF4444]" /> Task Issue — {viewingIssue?.title}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            {(viewingIssue?.feedback || []).length === 0 ? (
-              <p className="text-[#C0C0C8]/55 text-sm">No feedback messages.</p>
-            ) : (
-              <div className="space-y-2 max-h-80 overflow-y-auto">
-                {(viewingIssue?.feedback || []).map((f, i) => (
-                  <div key={i} className="bg-[#0A0A0F] border border-white/10 rounded-[10px] px-3 py-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[#00D4FF] text-xs font-bold">{f.byName || 'Employee'}</span>
-                      <span className="text-[#C0C0C8]/45 text-[10px]">{f.createdAt?.split('T')[0]}</span>
-                    </div>
-                    <p className="text-white text-sm">{f.message}</p>
-                  </div>
+          <button
+            onClick={submit}
+            disabled={busy}
+            data-testid="task-form-submit"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              background: 'var(--ax-accent)',
+              color: 'var(--ax-on-accent)',
+              border: 'none',
+              borderRadius: 'var(--ax-radius-control)',
+              padding: '11px 20px',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: busy ? 'wait' : 'pointer',
+              opacity: busy ? 0.65 : 1,
+              minHeight: 44,
+              transition: 'opacity var(--ax-duration-fast)',
+              marginTop: 4,
+            }}
+          >
+            {busy ? <Loader2 size={14} strokeWidth={1.5} style={{ animation: 'spin 0.8s linear infinite' }} /> : <Plus size={14} strokeWidth={1.5} />}
+            {busy ? 'Creating...' : 'Create task'}
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---- Main ---------------------------------------------------------------
+
+export default function AdminTasks() {
+  const [tasks, setTasks] = useState([]);
+  const [status, setStatus] = useState('loading'); // loading | error | ok
+  const [creating, setCreating] = useState(false);
+
+  const load = useCallback(async () => {
+    setStatus('loading');
+    try {
+      const r = await adminApi.listTasks();
+      setTasks(r.data);
+      setStatus('ok');
+    } catch {
+      setStatus('error');
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const moveTask = useCallback(async (task, newStatus) => {
+    try {
+      await adminApi.updateTask(task.id, { ...task, status: newStatus });
+      await load();
+    } catch {
+      toast.error('Move failed');
+    }
+  }, [load]);
+
+  const deleteTask = useCallback(async (id) => {
+    try {
+      await adminApi.deleteTask(id);
+      toast.success('Task deleted');
+      setTasks((prev) => prev.filter((t) => t.id !== id));
+    } catch {
+      toast.error('Delete failed');
+    }
+  }, []);
+
+  const totalDone = tasks.filter((t) => t.status === 'done').length;
+
+  return (
+    <>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div
+        data-testid="admin-tasks-page"
+        style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
+      >
+        {/* header */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <div className="ax-mono-label" style={{ marginBottom: 6 }}>Tasks</div>
+            <h1 style={{ color: 'var(--ax-heading)', fontSize: 22, fontWeight: 700, margin: 0, letterSpacing: '-0.01em' }}>
+              Kanban board
+            </h1>
+            {status === 'ok' && tasks.length > 0 && (
+              <p style={{ fontSize: 12, color: 'var(--ax-muted)', marginTop: 4 }}>
+                <span className="ax-nums">{totalDone}</span> of <span className="ax-nums">{tasks.length}</span> done
+              </p>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              onClick={load}
+              aria-label="Refresh tasks"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                fontSize: 13, color: 'var(--ax-muted)',
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: '8px 10px', borderRadius: 'var(--ax-radius-control)', minHeight: 44,
+                transition: 'color var(--ax-duration-fast)',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--ax-heading)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ax-muted)'; }}
+            >
+              <RefreshCw size={13} strokeWidth={1.5} />
+              Refresh
+            </button>
+
+            <Dialog open={creating} onOpenChange={setCreating}>
+              <DialogTrigger asChild>
+                <button
+                  data-testid="task-create-button"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: 'var(--ax-accent)', color: 'var(--ax-on-accent)',
+                    border: 'none', borderRadius: 'var(--ax-radius-control)',
+                    padding: '10px 16px', fontSize: 13, fontWeight: 600,
+                    cursor: 'pointer', minHeight: 44,
+                    transition: 'background var(--ax-duration-fast)',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--ax-accent-dim)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--ax-accent)'; }}
+                >
+                  <Plus size={14} strokeWidth={1.5} />
+                  New task
+                </button>
+              </DialogTrigger>
+            </Dialog>
+          </div>
+        </div>
+
+        {/* skeleton */}
+        {status === 'loading' && (
+          <>
+            <style>{`.skel { background: linear-gradient(90deg, var(--ax-surface) 0%, var(--ax-surface-2) 50%, var(--ax-surface) 100%); background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; } @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
+              {COLS.map((c) => <ColumnSkeleton key={c.id} />)}
+            </div>
+          </>
+        )}
+
+        {/* error */}
+        {status === 'error' && (
+          <div style={{
+            background: 'var(--ax-surface)',
+            border: '1px solid var(--ax-border)',
+            borderRadius: 'var(--ax-radius-panel)',
+            padding: '40px 24px',
+            textAlign: 'center',
+          }}>
+            <AlertCircle size={28} strokeWidth={1.5} style={{ color: 'var(--ax-error)', marginBottom: 12 }} />
+            <p style={{ color: 'var(--ax-heading)', fontWeight: 600, marginBottom: 6 }}>Could not load tasks</p>
+            <p style={{ color: 'var(--ax-muted)', fontSize: 13, marginBottom: 20 }}>Check your connection and try again.</p>
+            <button
+              onClick={load}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: 'var(--ax-surface-2)', border: '1px solid var(--ax-border-strong)',
+                borderRadius: 'var(--ax-radius-control)', color: 'var(--ax-heading)',
+                padding: '10px 18px', fontSize: 13, fontWeight: 500, cursor: 'pointer', minHeight: 44,
+              }}
+            >
+              <RefreshCw size={13} strokeWidth={1.5} /> Retry
+            </button>
+          </div>
+        )}
+
+        {/* board */}
+        {status === 'ok' && (
+          <>
+            {/* empty */}
+            {tasks.length === 0 && (
+              <div style={{
+                background: 'var(--ax-surface)',
+                border: '1px solid var(--ax-border)',
+                borderRadius: 'var(--ax-radius-panel)',
+                padding: '56px 24px',
+                textAlign: 'center',
+              }}>
+                <ClipboardList size={32} strokeWidth={1.5} style={{ color: 'var(--ax-muted)', marginBottom: 14 }} />
+                <p style={{ color: 'var(--ax-heading)', fontWeight: 600, marginBottom: 6 }}>No tasks yet</p>
+                <p style={{ color: 'var(--ax-muted)', fontSize: 13, marginBottom: 24 }}>Create the first task to start tracking work.</p>
+                <button
+                  onClick={() => setCreating(true)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: 'var(--ax-accent)', color: 'var(--ax-on-accent)',
+                    border: 'none', borderRadius: 'var(--ax-radius-control)',
+                    padding: '10px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', minHeight: 44,
+                  }}
+                >
+                  <Plus size={14} strokeWidth={1.5} /> Add first task
+                </button>
+              </div>
+            )}
+
+            {/* columns */}
+            {tasks.length > 0 && (
+              <div
+                data-testid="admin-kanban"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                  gap: 16,
+                  alignItems: 'start',
+                }}
+              >
+                {COLS.map((col) => (
+                  <Column
+                    key={col.id}
+                    col={col}
+                    tasks={tasks.filter((t) => t.status === col.id)}
+                    onMove={moveTask}
+                    onDelete={deleteTask}
+                  />
                 ))}
               </div>
             )}
-            <button onClick={() => resolveIssue(viewingIssue.id)} className="w-full bg-[#10B981] text-[#0A0A0F] rounded-[10px] px-4 py-2.5 text-sm font-bold hover:bg-[#34D399]">
-              Mark issue resolved
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
+          </>
+        )}
+      </div>
 
-export default AdminTasks;
+      <CreateDialog open={creating} onOpenChange={setCreating} onCreated={load} />
+    </>
+  );
+}

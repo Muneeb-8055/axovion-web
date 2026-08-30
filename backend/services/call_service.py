@@ -3,8 +3,8 @@ import os
 import httpx
 from typing import Optional, Dict, Any
 
-RETELL_API_KEY = os.environ["RETELL_API_KEY"]
-VAPI_API_KEY = os.environ["VAPI_API_KEY"]
+RETELL_API_KEY = os.environ.get("RETELL_API_KEY", "")
+VAPI_API_KEY = os.environ.get("VAPI_API_KEY", "")
 RETELL_BASE = "https://api.retellai.com"
 VAPI_BASE = "https://api.vapi.ai"
 
