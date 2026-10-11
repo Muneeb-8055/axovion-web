@@ -148,21 +148,18 @@ const Team = () => {
                   className="md:col-span-5 relative"
                   style={{ minHeight: '380px' }}
                 >
-                  <picture>
-                    <source srcSet={founder.photo} type="image/webp" />
-                    <img
-                      src={founder.photoFallback}
-                      alt={`${founder.name}, ${founder.role} at Axovion.io`}
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        objectPosition: 'center top',
-                      }}
-                    />
-                  </picture>
+                  <img
+                    src={founder.photo}
+                    alt={`${founder.name}, ${founder.role} at Axovion.io`}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      objectPosition: 'center 25%',
+                    }}
+                  />
                   {/* Subtle cyan tint ring inside image */}
                   <div
                     aria-hidden="true"
