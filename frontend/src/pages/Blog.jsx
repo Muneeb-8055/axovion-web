@@ -80,6 +80,14 @@ const Blog = () => {
           name="description"
           content="Practical AI automation guides, case studies, and strategies for business owners."
         />
+        <link rel="canonical" href="https://www.axovion.io/blog" />
+        <meta property="og:title" content="AI Automation Blog &amp; Case Studies | Axovion.io" />
+        <meta
+          property="og:description"
+          content="Actionable engineering and implementation guides for deploying ROI-positive AI agents."
+        />
+        <meta property="og:url" content="https://www.axovion.io/blog" />
+        <meta property="og:type" content="website" />
       </Helmet>
 
       {/* ── Section 1: Page header (left-aligned, no eyebrow) ── */}

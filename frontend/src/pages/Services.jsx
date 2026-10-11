@@ -91,6 +91,46 @@ const Services = () => {
           name="description"
           content="End-to-end AI agent development: customer support chatbots, lead follow-up, booking automation, e-commerce, CRM &amp; email automation, AI consulting."
         />
+        <link rel="canonical" href="https://www.axovion.io/services" />
+        <meta property="og:title" content="AI Automation Services | Axovion.io" />
+        <meta
+          property="og:description"
+          content="Production-grade AI agents for customer support, CRM automation, lead follow-up, and e-commerce."
+        />
+        <meta property="og:url" content="https://www.axovion.io/services" />
+        <meta property="og:type" content="website" />
+        <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How quickly can Axovion deploy an AI agent?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Most custom AI agents are production-ready and live within approximately two weeks, fully connected to your existing tools and knowledge base."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Which platforms do Axovion AI agents integrate with?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Axovion agents integrate directly with HubSpot, Salesforce, Pipedrive, Gorgias, Zendesk, Intercom, Shopify, WhatsApp, and popular calendar/booking software."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Who owns the code, keys, and configurations?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "You maintain 100% ownership of all API keys, custom agent configurations, and workflow integrations."
+              }
+            }
+          ]
+        })}
+        </script>
       </Helmet>
 
       {/* ── 1. Hero ─────────────────────────────────────────────────────── */}

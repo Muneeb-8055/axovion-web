@@ -160,8 +160,11 @@ const Home = () => {
       <Helmet>
         <title>Axovion.io | AI Automation Agency, Automate to Win</title>
         <meta name="description" content="Axovion.io builds ROI-focused AI agents that automate customer support, lead follow-up, booking, and repetitive business workflows. Get your free AI Audit." />
+        <link rel="canonical" href="https://www.axovion.io/" />
         <meta property="og:title" content="Axovion.io | AI Automation Agency" />
         <meta property="og:description" content="Automate repetitive workflows in days, not quarters." />
+        <meta property="og:url" content="https://www.axovion.io/" />
+        <meta property="og:type" content="website" />
         {/* LCP hint for the first poster. Routed through worldUrl so it points at the
             CDN when one is configured. Deliberately no crossOrigin attribute: the
             <img> loads without CORS, and a mismatched preload mode is ignored and

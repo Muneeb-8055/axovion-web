@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /audit-report
-Sitemap: https://agency-launch-demo.preview.emergentagent.com/sitemap.xml
+Sitemap: https://www.axovion.io/sitemap.xml

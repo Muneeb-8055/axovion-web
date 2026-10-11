@@ -43,6 +43,14 @@ const About = () => {
           name="description"
           content="Axovion.io is an AI automation agency on a mission to help businesses reclaim their time. Learn our story, values, and how we work."
         />
+        <link rel="canonical" href="https://www.axovion.io/about" />
+        <meta property="og:title" content="About Axovion.io — Automate to Win" />
+        <meta
+          property="og:description"
+          content="Learn our mission, values, and engineering methodology for deploying production-grade AI agents."
+        />
+        <meta property="og:url" content="https://www.axovion.io/about" />
+        <meta property="og:type" content="website" />
       </Helmet>
 
       {/* ── 1. Hero ─────────────────────────────────────────────────────── */}

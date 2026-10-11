@@ -52,6 +52,14 @@ const Team = () => {
           name="description"
           content="Meet the team behind Axovion.io: builders who deploy production-grade AI for business outcomes, not demos."
         />
+        <link rel="canonical" href="https://www.axovion.io/team" />
+        <meta property="og:title" content="Team | Axovion.io" />
+        <meta
+          property="og:description"
+          content="Meet the builders behind Axovion.io who deploy production-grade AI for measurable business outcomes."
+        />
+        <meta property="og:url" content="https://www.axovion.io/team" />
+        <meta property="og:type" content="website" />
       </Helmet>
 
       {/* ── Section 1: Hero ── */}

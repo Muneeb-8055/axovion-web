@@ -157,6 +157,14 @@ const Contact = () => {
           name="description"
           content="Book a free 15-30 minute consultation with Axovion.io. We'll show you exactly where AI can help your business."
         />
+        <link rel="canonical" href="https://www.axovion.io/contact" />
+        <meta property="og:title" content="Contact &amp; Book an AI Consultation | Axovion.io" />
+        <meta
+          property="og:description"
+          content="Schedule a 15-30 minute consultation to map out custom AI agent workflows for your business."
+        />
+        <meta property="og:url" content="https://www.axovion.io/contact" />
+        <meta property="og:type" content="website" />
       </Helmet>
 
       {/* ── Section 1: Page header (left-aligned, no eyebrow) ── */}

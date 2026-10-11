@@ -712,6 +712,14 @@ const Audit = () => {
           name="description"
           content="Free AI Audit - our AI analyzes your business and builds a custom automation report with ROI estimates in minutes."
         />
+        <link rel="canonical" href="https://www.axovion.io/audit" />
+        <meta property="og:title" content="Free AI Business Audit | Axovion.io" />
+        <meta
+          property="og:description"
+          content="Measure before you automate: 24-hour custom AI audit with quantified monthly ROI savings."
+        />
+        <meta property="og:url" content="https://www.axovion.io/audit" />
+        <meta property="og:type" content="website" />
       </Helmet>
 
       {/* Hero */}

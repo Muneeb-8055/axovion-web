@@ -50,6 +50,14 @@ const Results = () => {
           name="description"
           content="See how businesses are saving time and money with Axovion.io AI agents, real case studies, real numbers."
         />
+        <link rel="canonical" href="https://www.axovion.io/results" />
+        <meta property="og:title" content="Real Results, Real ROI | Axovion.io" />
+        <meta
+          property="og:description"
+          content="See how businesses save time and operational costs with Axovion AI agents. Real case studies and verified metrics."
+        />
+        <meta property="og:url" content="https://www.axovion.io/results" />
+        <meta property="og:type" content="website" />
       </Helmet>
 
       {/* ── 1. Hero (number-led, no eyebrow) ────────────────────────────── */}
