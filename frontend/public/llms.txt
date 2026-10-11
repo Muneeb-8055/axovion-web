@@ -1,0 +1,27 @@
+# Axovion.io
+> ROI-focused AI automation agency building production-grade AI agents that automate customer support, lead follow-up, booking, and repetitive business workflows.
+
+## About
+Axovion bridges the gap between cutting-edge LLMs and high-reliability business operations. We engineer autonomous AI agents designed to operate unattended inside existing enterprise workflows, CRM platforms, and ticketing systems.
+
+- **Website**: https://www.axovion.io
+- **Co-Founders**: 
+  - Muneeb ur Rehman (Co-Founder & AI Solutions Architect)
+  - Muhammad Hamza Zafar (Co-Founder & Head of Automation)
+- **Primary Offer**: Free 24-Hour AI Audit (https://www.axovion.io/audit)
+
+## Core Services
+1. **AI Customer Support Agents**: Autonomous tier-1 and tier-2 ticket resolution, intelligent triage, and CRM sync (Zendesk, Freshdesk, Intercom, Salesforce).
+2. **Lead Qualification & Autonomous Booking**: 24/7 instant lead triage, multi-channel response (email, SMS, WhatsApp), calendar booking directly into Hubspot / Calendly.
+3. **Intelligent Workflow Automation**: Custom multi-agent integrations eliminating manual data entry, invoice processing, order reconciliation, and cross-platform handoffs.
+4. **AI Audit & Readiness Assessment**: Comprehensive mapping of workflows with quantifiable monthly ROI calculations delivered in 24 hours.
+
+## Key Outcomes & Metrics
+- Up to 82% of repetitive support tickets resolved without human intervention.
+- Sub-2 minute first-reply time across all digital touchpoints.
+- Average payback period under 60 days on production agent deployments.
+
+## Contact & Audits
+- Request Free AI Audit: https://www.axovion.io/audit
+- Email: hello@axovion.io
+- Contact Page: https://www.axovion.io/contact
