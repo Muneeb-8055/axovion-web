@@ -30,8 +30,8 @@ const FOUNDERS = [
     twitter: 'https://twitter.com',
   },
   {
-    id: 'hammad',
-    name: 'Hammad Arif',
+    id: 'hamza',
+    name: 'Muhammad Hamza Zafar',
     tag: 'Co-Founder',
     role: 'Co-Founder & Head of Automation',
     photo: '/team/founder-2.webp',
