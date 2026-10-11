@@ -13,8 +13,38 @@ import { useScrollReveal } from '../lib/hooks';
    because the sections speak for themselves.
 ── */
 
-const FOUNDER_PHOTO =
-  'https://images.unsplash.com/photo-1710527304331-4186db4ee708?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85&w=600';
+const FOUNDERS = [
+  {
+    id: 'muneeb',
+    name: 'Muneeb ur Rehman',
+    tag: 'Co-Founder',
+    role: 'Co-Founder & AI Solutions Architect',
+    photo: '/team/founder-1.webp',
+    photoFallback: '/team/founder-1.jpg',
+    bio: [
+      'I co-founded Axovion after seeing businesses waste countless hours every week hiring to fix bottlenecks that modern AI agents could eliminate in days. I specialize in architecting production-grade multi-agent systems, automated customer support pipelines, and intelligent workflow automation.',
+      'Our edge is relentlessly outcome-driven: every agent we build is tied directly to measurable return on investment, reduced first-reply times, and quantifiable hours saved.',
+    ],
+    quote: 'Most AI projects fail because they optimize for novelty, not outcomes. We engineer the boring, reliable infrastructure that compounds.',
+    linkedin: 'https://linkedin.com',
+    twitter: 'https://twitter.com',
+  },
+  {
+    id: 'hammad',
+    name: 'Hammad Arif',
+    tag: 'Co-Founder',
+    role: 'Co-Founder & Head of Automation',
+    photo: '/team/founder-2.webp',
+    photoFallback: '/team/founder-2.jpg',
+    bio: [
+      'Co-founded Axovion to bridge the gap between cutting-edge LLMs and high-reliability business operations. Leading the development of enterprise integrations, intelligent triage systems, and autonomous booking and sales pipelines.',
+      'We build agents that run quietly and reliably inside existing workflows—integrating with CRMs, ticketing systems, and operational backends with zero manual babysitting.',
+    ],
+    quote: 'We do not build prototypes or fragile demos. We build battle-tested AI infrastructure designed to operate unattended.',
+    linkedin: 'https://linkedin.com',
+    twitter: 'https://twitter.com',
+  },
+];
 
 const OPEN_ROLES = [
   {
@@ -96,168 +126,166 @@ const Team = () => {
         </div>
       </section>
 
-      {/* ── Section 2: Founder portrait card ── */}
+      {/* ── Section 2: Founders portrait cards ── */}
       <section
         className="pb-20 md:pb-[120px]"
         style={{ background: 'var(--ax-bg)' }}
       >
-        <div className="ax-container">
-          <Reveal>
-            <article
-              className="grid grid-cols-1 md:grid-cols-12 gap-0 overflow-hidden"
-              style={{
-                borderRadius: 'var(--ax-radius-panel)',
-                background: 'var(--ax-surface)',
-                border: '1px solid var(--ax-border)',
-              }}
-              data-testid="founder-card"
-            >
-              {/* Portrait */}
-              <div
-                className="md:col-span-5 relative"
-                style={{ minHeight: '360px' }}
+        <div className="ax-container space-y-12 md:space-y-16">
+          {FOUNDERS.map((founder, index) => (
+            <Reveal key={founder.id} delay={index * 100}>
+              <article
+                className="grid grid-cols-1 md:grid-cols-12 gap-0 overflow-hidden"
+                style={{
+                  borderRadius: 'var(--ax-radius-panel)',
+                  background: 'var(--ax-surface)',
+                  border: '1px solid var(--ax-border)',
+                }}
+                data-testid={`founder-card-${founder.id}`}
               >
-                <img
-                  src={FOUNDER_PHOTO}
-                  alt="Alex Morgan, Founder of Axovion.io, smiling in a workroom setting"
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    objectPosition: 'center top',
-                  }}
-                />
-                {/* Subtle cyan tint ring inside image */}
+                {/* Portrait */}
                 <div
-                  aria-hidden="true"
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    boxShadow: 'inset 0 0 0 1px rgba(0,212,255,0.12)',
-                  }}
-                />
-              </div>
-
-              {/* Bio */}
-              <div className="md:col-span-7 p-7 md:p-12 flex flex-col">
-                <div>
-                  <p
-                    className="text-sm font-semibold mb-1"
-                    style={{ color: 'var(--ax-accent)' }}
-                  >
-                    Founder
-                  </p>
-                  <h2
-                    className="text-white font-extrabold tracking-tight"
-                    style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)' }}
-                  >
-                    Alex Morgan
-                  </h2>
-                  <p
-                    className="mt-1 text-sm"
-                    style={{ color: 'var(--ax-muted)' }}
-                  >
-                    Founder and AI Automation Strategist
-                  </p>
-                </div>
-
-                <div
-                  className="mt-6 space-y-4 text-base leading-relaxed"
-                  style={{ color: 'var(--ax-text)' }}
+                  className="md:col-span-5 relative"
+                  style={{ minHeight: '380px' }}
                 >
-                  <p>
-                    I started Axovion after watching too many businesses hire to fix problems that AI
-                    could solve in a week. After two years building production AI agents across
-                    chatbots, follow-up systems, booking, and ops, I productized the playbook so any
-                    business gets ROI-focused automation in days.
-                  </p>
-                  <p>
-                    Our edge is not the AI. It is the focus on outcomes: every agent we ship has a
-                    tracked return. If it does not save you money or time, we do not build it.
-                  </p>
+                  <picture>
+                    <source srcSet={founder.photo} type="image/webp" />
+                    <img
+                      src={founder.photoFallback}
+                      alt={`${founder.name}, ${founder.role} at Axovion.io`}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        objectPosition: 'center top',
+                      }}
+                    />
+                  </picture>
+                  {/* Subtle cyan tint ring inside image */}
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      boxShadow: 'inset 0 0 0 1px rgba(0,212,255,0.12)',
+                    }}
+                  />
                 </div>
 
-                {/* Pull quote */}
-                <blockquote
-                  className="mt-7 p-5"
-                  style={{
-                    borderRadius: 'var(--ax-radius-panel)',
-                    background: 'var(--ax-bg)',
-                    borderLeft: '3px solid var(--ax-accent)',
-                  }}
-                >
-                  <p
-                    className="text-base leading-relaxed"
-                    style={{ color: 'var(--ax-heading)' }}
-                  >
-                    {'"Most AI projects fail because they optimize for novelty, not outcomes. We build the boring stuff that compounds."'}
-                  </p>
-                </blockquote>
+                {/* Bio */}
+                <div className="md:col-span-7 p-7 md:p-12 flex flex-col justify-between">
+                  <div>
+                    <p
+                      className="text-sm font-semibold mb-1"
+                      style={{ color: 'var(--ax-accent)' }}
+                    >
+                      {founder.tag}
+                    </p>
+                    <h2
+                      className="text-white font-extrabold tracking-tight"
+                      style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)' }}
+                    >
+                      {founder.name}
+                    </h2>
+                    <p
+                      className="mt-1 text-sm font-medium"
+                      style={{ color: 'var(--ax-muted)' }}
+                    >
+                      {founder.role}
+                    </p>
+                  </div>
 
-                {/* Social links */}
-                <div className="mt-7 flex flex-wrap items-center gap-3">
-                  <a
-                    href="https://linkedin.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 text-sm transition-colors duration-200"
-                    style={{
-                      padding: '0.5rem 1rem',
-                      borderRadius: 'var(--ax-radius-control)',
-                      background: 'var(--ax-bg)',
-                      color: 'var(--ax-heading)',
-                      border: '1px solid var(--ax-border)',
-                      minHeight: '44px',
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.borderColor = 'rgba(0,212,255,0.35)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--ax-border)';
-                    }}
-                    data-testid="founder-linkedin"
+                  <div
+                    className="mt-6 space-y-4 text-base leading-relaxed"
+                    style={{ color: 'var(--ax-text)' }}
                   >
-                    <Linkedin
-                      strokeWidth={1.5}
-                      className="h-4 w-4"
-                      style={{ color: 'var(--ax-accent)' }}
-                    />
-                    LinkedIn
-                  </a>
-                  <a
-                    href="https://twitter.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 text-sm transition-colors duration-200"
+                    {founder.bio.map((paragraph, pIdx) => (
+                      <p key={pIdx}>{paragraph}</p>
+                    ))}
+                  </div>
+
+                  {/* Pull quote */}
+                  <blockquote
+                    className="mt-7 p-5"
                     style={{
-                      padding: '0.5rem 1rem',
-                      borderRadius: 'var(--ax-radius-control)',
+                      borderRadius: 'var(--ax-radius-panel)',
                       background: 'var(--ax-bg)',
-                      color: 'var(--ax-heading)',
-                      border: '1px solid var(--ax-border)',
-                      minHeight: '44px',
+                      borderLeft: '3px solid var(--ax-accent)',
                     }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.borderColor = 'rgba(0,212,255,0.35)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--ax-border)';
-                    }}
-                    data-testid="founder-twitter"
                   >
-                    <Twitter
-                      strokeWidth={1.5}
-                      className="h-4 w-4"
-                      style={{ color: 'var(--ax-accent)' }}
-                    />
-                    Twitter / X
-                  </a>
+                    <p
+                      className="text-base leading-relaxed italic"
+                      style={{ color: 'var(--ax-heading)' }}
+                    >
+                      {`"${founder.quote}"`}
+                    </p>
+                  </blockquote>
+
+                  {/* Social links */}
+                  <div className="mt-7 flex flex-wrap items-center gap-3">
+                    <a
+                      href={founder.linkedin}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 text-sm transition-colors duration-200"
+                      style={{
+                        padding: '0.5rem 1rem',
+                        borderRadius: 'var(--ax-radius-control)',
+                        background: 'var(--ax-bg)',
+                        color: 'var(--ax-heading)',
+                        border: '1px solid var(--ax-border)',
+                        minHeight: '44px',
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(0,212,255,0.35)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--ax-border)';
+                      }}
+                      data-testid={`founder-${founder.id}-linkedin`}
+                    >
+                      <Linkedin
+                        strokeWidth={1.5}
+                        className="h-4 w-4"
+                        style={{ color: 'var(--ax-accent)' }}
+                      />
+                      LinkedIn
+                    </a>
+                    <a
+                      href={founder.twitter}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 text-sm transition-colors duration-200"
+                      style={{
+                        padding: '0.5rem 1rem',
+                        borderRadius: 'var(--ax-radius-control)',
+                        background: 'var(--ax-bg)',
+                        color: 'var(--ax-heading)',
+                        border: '1px solid var(--ax-border)',
+                        minHeight: '44px',
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(0,212,255,0.35)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--ax-border)';
+                      }}
+                      data-testid={`founder-${founder.id}-twitter`}
+                    >
+                      <Twitter
+                        strokeWidth={1.5}
+                        className="h-4 w-4"
+                        style={{ color: 'var(--ax-accent)' }}
+                      />
+                      Twitter / X
+                    </a>
+                  </div>
                 </div>
-              </div>
-            </article>
-          </Reveal>
+              </article>
+            </Reveal>
+          ))}
         </div>
       </section>
 
