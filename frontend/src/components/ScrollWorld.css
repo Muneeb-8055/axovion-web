@@ -19,6 +19,12 @@
   z-index: 0;
 }
 
+/* Eliminate baked-in pillarbox margins so the video fits edge-to-edge across the screen */
+.ax-sw-host .sw-stage {
+  transform: scale(1.22);
+  transform-origin: center 42%;
+}
+
 .ax-sw-host.sw-root {
   --sw-bg:           var(--ax-bg);
   --sw-ink:          var(--ax-heading);
