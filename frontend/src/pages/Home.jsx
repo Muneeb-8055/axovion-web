@@ -190,8 +190,9 @@ const Home = () => {
       </section>
 
       {/* Everything below the cinematic. Raised above the engine's fixed
-          layers, which stay mounted for the length of the flight. */}
-      <div className="relative z-10">
+          layers, which stay mounted for the length of the flight. Solid background
+          prevents fixed cinematic layers from bleeding through. */}
+      <div className="relative z-10" style={{ background: 'var(--ax-bg)' }}>
 
         {/* WHAT IT COSTS TO LEAVE IT ALONE */}
         <section className="ax-section" data-testid="home-problem-section">

@@ -349,7 +349,15 @@ function mountScrollWorld(container, config) {
       const before = y < seg.start, after = y > seg.end;
       let cop;
       if (i === 0) cop = after ? 0 : smooth(1 - pr / 0.62);            // greets on landing
-      else if (i === N - 1) cop = before ? 0 : smooth(pr / 0.4);       // holds CTA at the end
+      else if (i === N - 1) {
+        if (before) cop = 0;
+        else if (after) {
+          const tail = clamp((y - seg.end) / (0.3 * vh), 0, 1);
+          cop = smooth(1 - tail);
+        } else {
+          cop = smooth(pr / 0.4);
+        }
+      }
       else cop = (before || after) ? 0 : smooth(1 - Math.abs(pr - 0.5) / 0.5);
       const c = copies[i];
       c.style.opacity = cop;
@@ -368,6 +376,11 @@ function mountScrollWorld(container, config) {
     }
     scrollbarFill.style.transform = `scaleX(${clamp(y / (totalW * vh))})`;
     hint.style.opacity = clamp(1 - y / (0.5 * vh));
+    if (route) {
+      const pastFlight = y > totalW * vh;
+      route.style.opacity = pastFlight ? String(clamp(1 - (y - totalW * vh) / (0.25 * vh), 0, 1)) : '';
+      route.style.pointerEvents = pastFlight ? 'none' : '';
+    }
     if (particles) particles.style.transform = `translate3d(0, ${-y * 0.05}px, 0)`;
     ticking = false;
   }
