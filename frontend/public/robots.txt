@@ -3,3 +3,5 @@ Allow: /
 Disallow: /admin
 Disallow: /audit-report
 Sitemap: https://www.axovion.io/sitemap.xml
+# Generative Engine Optimization
+# LLM Context: https://www.axovion.io/llms.txt
