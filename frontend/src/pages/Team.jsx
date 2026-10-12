@@ -90,6 +90,10 @@ const Team = () => {
         />
         <meta property="og:url" content="https://www.axovion.io/team" />
         <meta property="og:type" content="website" />
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" href="https://customer-assets.emergentagent.com/job_137b2a28-eae0-47d2-9d98-373dabc9cc03/artifacts/hbqa2d49_logo.jpg" />
+        <link rel="preload" as="image" href="/team/founder-1.webp" type="image/webp" />
+        <link rel="preload" as="image" href="/team/founder-2.webp" type="image/webp" />
       </Helmet>
 
       {/* ── Section 1: Hero ── */}
@@ -148,18 +152,25 @@ const Team = () => {
                   className="md:col-span-5 relative"
                   style={{ minHeight: '380px' }}
                 >
-                  <img
-                    src={founder.photo}
-                    alt={`${founder.name}, ${founder.role} at Axovion.io`}
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      objectPosition: 'center 25%',
-                    }}
-                  />
+                  <picture>
+                    <source srcSet={founder.photo} type="image/webp" />
+                    <source srcSet={founder.photoFallback} type="image/jpeg" />
+                    <img
+                      src={founder.photo}
+                      alt={`${founder.name}, ${founder.role} at Axovion.io`}
+                      loading="eager"
+                      fetchPriority={index === 0 ? 'high' : 'auto'}
+                      decoding="async"
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        objectPosition: 'center 25%',
+                      }}
+                    />
+                  </picture>
                   {/* Subtle cyan tint ring inside image */}
                   <div
                     aria-hidden="true"
