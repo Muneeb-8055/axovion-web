@@ -5,9 +5,8 @@
 Axovion bridges the gap between cutting-edge LLMs and high-reliability business operations. We engineer autonomous AI agents designed to operate unattended inside existing enterprise workflows, CRM platforms, and ticketing systems.
 
 - **Website**: https://www.axovion.io
-- **Co-Founders**: 
-  - Muneeb ur Rehman (Co-Founder & AI Solutions Architect)
-  - Muhammad Hamza Zafar (Co-Founder & Head of Automation)
+- **Founder**: Muneeb ur Rehman (Founder & AI Solutions Architect)
+- **Co-Founder**: Muhammad Hamza Zafar (Co-Founder & Head of Automation)
 - **Primary Offer**: Free 24-Hour AI Audit (https://www.axovion.io/audit)
 
 ## Core Services
