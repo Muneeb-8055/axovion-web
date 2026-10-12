@@ -17,12 +17,12 @@ const FOUNDERS = [
   {
     id: 'muneeb',
     name: 'Muneeb ur Rehman',
-    tag: 'Co-Founder',
-    role: 'Co-Founder & AI Solutions Architect',
+    tag: 'Founder',
+    role: 'Founder & AI Solutions Architect',
     photo: '/team/founder-1.webp',
     photoFallback: '/team/founder-1.jpg',
     bio: [
-      'I co-founded Axovion after seeing businesses waste countless hours every week hiring to fix bottlenecks that modern AI agents could eliminate in days. I specialize in architecting production-grade multi-agent systems, automated customer support pipelines, and intelligent workflow automation.',
+      'I founded Axovion after seeing businesses waste countless hours every week hiring to fix bottlenecks that modern AI agents could eliminate in days. I specialize in architecting production-grade multi-agent systems, automated customer support pipelines, and intelligent workflow automation.',
       'Our edge is relentlessly outcome-driven: every agent we build is tied directly to measurable return on investment, reduced first-reply times, and quantifiable hours saved.',
     ],
     quote: 'Most AI projects fail because they optimize for novelty, not outcomes. We engineer the boring, reliable infrastructure that compounds.',
