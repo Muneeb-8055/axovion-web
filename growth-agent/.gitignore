@@ -1,0 +1,5 @@
+.env
+__pycache__/
+*.pyc
+leads_database.json
+logs/
