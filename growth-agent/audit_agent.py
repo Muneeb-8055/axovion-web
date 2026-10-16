@@ -65,7 +65,7 @@ Tone: Direct, technical yet commercial, zero corporate buzzwords, zero fluff. So
 Please produce a complete Prospect Intelligence & Proposal Dossier containing:
 1. Target Summary (Industry & Core Offer)
 2. The Top 2 Operational Bottlenecks Detected
-3. The Proposed Axovion Agent Architecture
+3. The Proposed Axovion Agent Architecture (formatted in clean bulleted workflow steps)
 4. The Outreach Message (Formatted ready to send via LinkedIn DM, Upwork proposal, or Email, signed by Muhammad Hamza Zafar, Co-Founder & Head of Automation at Axovion.io)"""
 
     messages = [
@@ -74,7 +74,7 @@ Please produce a complete Prospect Intelligence & Proposal Dossier containing:
     ]
 
     print("[*] Generating intelligence dossier with AI Brain ...")
-    return brain.generate(messages, temperature=0.6, max_tokens=1400)
+    return brain.generate(messages, temperature=0.6, max_tokens=2500)
 
 
 if __name__ == "__main__":
