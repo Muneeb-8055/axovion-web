@@ -10,6 +10,7 @@ from brain import brain
 from audit_agent import generate_audit_proposal
 from content_agent import generate_content
 from closer_agent import reply_to_prospect
+from outbound_agent import dispatch_proposal
 
 
 def print_banner():
@@ -97,6 +98,31 @@ def main():
         msg = " ".join(sys.argv[3:]) if len(sys.argv) > 3 else "Can you tell me more about pricing?"
         res = reply_to_prospect(name, msg)
         print("\n" + res)
+
+    elif cmd == "send":
+        if len(sys.argv) < 4:
+            print("Usage: python3 run.py send <recipient_email> <subject> [message_or_file_path]")
+            return
+        recipient = sys.argv[2]
+        subject = sys.argv[3]
+        if len(sys.argv) > 4:
+            content_arg = sys.argv[4]
+            if os.path.exists(content_arg):
+                with open(content_arg, "r") as f:
+                    body = f.read()
+            else:
+                body = " ".join(sys.argv[4:])
+        else:
+            body = "Hello,\n\nFollowing up on our automation audit for your team."
+
+        print(f"[*] Dispatching outreach to: {recipient} ...")
+        res = dispatch_proposal(recipient, subject, body)
+        if res.get("success"):
+            print(f"[+] OUTREACH SENT SUCCESSFULLY via {res.get('channel')}!")
+        else:
+            print(f"[-] DISPATCH FAILED: {res.get('error')}")
+            if "details" in res:
+                print(f"    Details: {res.get('details')}")
 
     else:
         print(f"Unknown command: '{cmd}'. Run 'python3 run.py' for help.")
