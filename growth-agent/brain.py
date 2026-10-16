@@ -28,9 +28,7 @@ def load_env(env_path=None):
             if "=" in line:
                 key, val = line.split("=", 1)
                 key = key.strip()
-                val = val.strip().strip("'\"")
-                if key not in os.environ:
-                    os.environ[key] = val
+                os.environ[key] = val
 
 
 # Automatically load .env on module import
@@ -70,10 +68,59 @@ class AIBrain:
                 "GEMINI_API_KEY is not set in growth-agent/.env! "
                 "Get a 100% free key at https://aistudio.google.com/app/apikey"
             )
-        model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
-        # Google AI Studio OpenAI-compatible endpoint
-        url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
-        return self._send_request(url, api_key, model, messages, temperature, max_tokens)
+        
+        preferred_models = [
+            os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite"),
+            "gemini-3.8-flash",
+            "gemini-3.5-flash"
+        ]
+
+        contents = []
+        system_instruction = None
+        for m in messages:
+            if m["role"] == "system":
+                system_instruction = {"parts": [{"text": m["content"]}]}
+            else:
+                role = "user" if m["role"] == "user" else "model"
+                contents.append({"role": role, "parts": [{"text": m["content"]}]})
+
+        payload = {
+            "contents": contents,
+            "generationConfig": {
+                "temperature": temperature,
+                "maxOutputTokens": max(max_tokens, 800),
+            },
+        }
+        if system_instruction:
+            payload["system_instruction"] = system_instruction
+
+        last_error = None
+        for model in preferred_models:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={
+                    "Content-Type": "application/json",
+                    "User-Agent": "AxovionGrowthAgent/1.0",
+                },
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    candidate = data.get("candidates", [{}])[0]
+                    parts = candidate.get("content", {}).get("parts", [])
+                    text = " ".join(p.get("text", "") for p in parts if p.get("text"))
+                    if text.strip():
+                        return text.strip()
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode("utf-8", errors="ignore")
+                last_error = f"Model {model} (status {e.code}): {err_body[:120]}"
+            except Exception as e:
+                last_error = f"Model {model}: {e}"
+
+        raise RuntimeError(f"Gemini API Error: {last_error}")
 
     def _call_groq(self, messages, temperature, max_tokens):
         api_key = os.getenv("GROQ_API_KEY")
