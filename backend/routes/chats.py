@@ -18,7 +18,12 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 async def send_chat_message(payload: ChatSendInput):
     """Public: send a message to the AI chatbot."""
     # Find or create thread
-    thread = await db.chats.find_one({"sessionId": payload.sessionId}, {"_id": 0})
+    thread = None
+    try:
+        thread = await db.chats.find_one({"sessionId": payload.sessionId}, {"_id": 0})
+    except Exception as db_err:
+        logger.warning(f"DB find_one error (proceeding with fallback thread): {db_err}")
+
     now_iso = datetime.now(timezone.utc).isoformat()
 
     if not thread:
@@ -32,7 +37,10 @@ async def send_chat_message(payload: ChatSendInput):
             "createdAt": now_iso,
             "updatedAt": now_iso,
         }
-        await db.chats.insert_one({**thread})
+        try:
+            await db.chats.insert_one({**thread})
+        except Exception as db_err:
+            logger.warning(f"DB insert_one error: {db_err}")
 
     # Append user message
     user_msg = {"role": "user", "content": payload.message, "timestamp": now_iso}
@@ -58,11 +66,14 @@ async def send_chat_message(payload: ChatSendInput):
     if payload.contactName:
         update_doc["contactName"] = payload.contactName
 
-    await db.chats.update_one(
-        {"sessionId": payload.sessionId},
-        {"$set": update_doc},
-        upsert=True,
-    )
+    try:
+        await db.chats.update_one(
+            {"sessionId": payload.sessionId},
+            {"$set": update_doc},
+            upsert=True,
+        )
+    except Exception as db_err:
+        logger.warning(f"DB update_one error: {db_err}")
 
     return {
         "sessionId": payload.sessionId,
