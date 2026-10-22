@@ -112,7 +112,7 @@ async def chat_complete(
     if json_mode:
         payload["response_format"] = {"type": "json_object"}
 
-    async with httpx.AsyncClient(timeout=60) as client:
+    async with httpx.AsyncClient(timeout=15) as client:
         try:
             r = await client.post(
                 GROQ_URL,
