@@ -62,6 +62,7 @@ export const Chatbot = () => {
   ]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [isWaking, setIsWaking] = useState(false);
   const [lastFailedText, setLastFailedText] = useState(null);
 
   const sessionId = useRef(getSessionId());
@@ -71,6 +72,17 @@ export const Chatbot = () => {
   const panelRef = useRef(null);
   const headingId = useId();
 
+  /* ---- background backend pre-warm to eliminate cold starts ---- */
+  useEffect(() => {
+    const prewarm = () => {
+      try {
+        publicApi.getChat(sessionId.current).catch(() => {});
+      } catch {}
+    };
+    const t = setTimeout(prewarm, 1200);
+    return () => clearTimeout(t);
+  }, []);
+
   /* ---- scroll to bottom on new messages ---- */
   useEffect(() => {
     if (scrollRef.current) {
@@ -78,9 +90,14 @@ export const Chatbot = () => {
     }
   }, [messages, sending]);
 
-  /* ---- focus management ---- */
+  /* ---- focus management & pre-warm on open ---- */
   useEffect(() => {
     if (open) {
+      // Trigger pre-warm in case backend was idle
+      try {
+        publicApi.getChat(sessionId.current).catch(() => {});
+      } catch {}
+
       /* Move focus into the panel on open */
       const raf = requestAnimationFrame(() => {
         inputRef.current?.focus();
@@ -128,6 +145,27 @@ export const Chatbot = () => {
     [open]
   );
 
+  /* ---- instant smart fallback for common queries if server delays ---- */
+  const getInstantFallback = (query) => {
+    const q = (query || '').toLowerCase().trim();
+    if (q === 'hi' || q === 'hello' || q === 'hey' || q.startsWith('hi ') || q.startsWith('hello ')) {
+      return "Hey! I'm here to help you automate your business with high-ROI AI agents. Are you looking to streamline customer support, lead generation, or full workflow automation?\n\nWhat is the biggest operational bottleneck in your business right now?";
+    }
+    if (q.includes('price') || q.includes('cost') || q.includes('how much') || q.includes('pricing')) {
+      return "Pricing depends on your workflow scope. Our Free AI Audit provides a complete custom ROI calculation and exact cost estimate. You can submit an audit at /audit or book a call at /contact.";
+    }
+    if (q.includes('long') || q.includes('time') || q.includes('timeline') || q.includes('deploy')) {
+      return "Implementation typically takes days to a few weeks depending on scope. Most AI customer support chatbots deploy in 7-14 days.";
+    }
+    if (q.includes('industry') || q.includes('industries') || q.includes('who')) {
+      return "We build AI automation for E-commerce, Real Estate, Healthcare/Clinics, Marketing Agencies, SaaS, and Professional Services.";
+    }
+    if (q.includes('audit') || q.includes('free')) {
+      return "The Free AI Audit is a comprehensive scan of your business operations. In 24 hours, we map your workflows, estimate ROI, and recommend specific AI agents. Visit /audit to get started.";
+    }
+    return null;
+  };
+
   /* ---- send ---- */
   const sendMessage = async (text) => {
     const content = (text ?? input).trim();
@@ -135,37 +173,64 @@ export const Chatbot = () => {
     setInput('');
     setLastFailedText(null);
     setSending(true);
+    setIsWaking(false);
+
+    // If server takes longer than 3.5s (e.g. cold start), display wake status
+    const wakeTimer = setTimeout(() => {
+      setIsWaking(true);
+    }, 3500);
+
     const userMsg = {
       role: 'user',
       content,
       timestamp: new Date().toISOString(),
     };
     setMessages((m) => [...m, userMsg]);
+
     try {
       const res = await publicApi.sendChat({
         sessionId: sessionId.current,
         message: content,
       });
+      clearTimeout(wakeTimer);
+      setIsWaking(false);
       setMessages((m) => [
         ...m,
         {
           role: 'assistant',
-          content: res.data.reply,
+          content: res.data?.reply || "I'm here to help with AI automation. Ask me anything or request a Free AI Audit at /audit.",
           timestamp: new Date().toISOString(),
         },
       ]);
     } catch {
-      setLastFailedText(content);
-      setMessages((m) => [
-        ...m,
-        {
-          role: 'assistant',
-          content: null, // sentinel: render as error bubble
-          timestamp: new Date().toISOString(),
-          isError: true,
-        },
-      ]);
+      clearTimeout(wakeTimer);
+      setIsWaking(false);
+
+      const fallbackText = getInstantFallback(content);
+      if (fallbackText) {
+        setMessages((m) => [
+          ...m,
+          {
+            role: 'assistant',
+            content: fallbackText,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+      } else {
+        setLastFailedText(content);
+        setMessages((m) => [
+          ...m,
+          {
+            role: 'assistant',
+            content: null, // sentinel: render as error bubble
+            timestamp: new Date().toISOString(),
+            isError: true,
+          },
+        ]);
+      }
     } finally {
+      clearTimeout(wakeTimer);
+      setIsWaking(false);
       setSending(false);
     }
   };
@@ -492,7 +557,7 @@ export const Chatbot = () => {
               {/* Typing indicator */}
               {sending && (
                 <div
-                  style={{ display: 'flex', justifyContent: 'flex-start' }}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}
                   aria-label="Axovion AI is typing"
                 >
                   <div
@@ -506,6 +571,19 @@ export const Chatbot = () => {
                   >
                     <TypingDots />
                   </div>
+                  {isWaking && (
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: 'var(--ax-muted-2)',
+                        paddingLeft: 4,
+                        fontFamily: 'JetBrains Mono, monospace',
+                        letterSpacing: '0.04em',
+                      }}
+                    >
+                      Axovion AI is waking up...
+                    </span>
+                  )}
                 </div>
               )}
 
