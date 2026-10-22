@@ -41,8 +41,19 @@ db = DatabaseProxy()
 
 def _create_motor_client(url: str):
     if "mongodb+srv://" in url or "ssl=true" in url.lower() or "tls=true" in url.lower():
-        return AsyncIOMotorClient(url, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=4000)
-    return AsyncIOMotorClient(url, serverSelectionTimeoutMS=2000)
+        return AsyncIOMotorClient(
+            url,
+            tlsCAFile=certifi.where(),
+            serverSelectionTimeoutMS=4000,
+            connectTimeoutMS=5000,
+            maxIdleTimeMS=45000,
+        )
+    return AsyncIOMotorClient(
+        url,
+        serverSelectionTimeoutMS=2000,
+        connectTimeoutMS=5000,
+        maxIdleTimeMS=45000,
+    )
 
 
 try:
